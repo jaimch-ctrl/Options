@@ -1,1 +1,590 @@
+import { useState, useMemo, useCallback } from “react”;
+import {
+LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
+ResponsiveContainer, BarChart, Bar, Cell, LabelList, Area, AreaChart
+} from “recharts”;
 
+// ─── Full product name map ────────────────────────────────────────────────────
+const FULL_NAMES = {
+1:“勤誠兆豐59購01”, 2:“啟碁元大5C購01”, 3:“聯發科元大61購18”,
+4:“啟碁富邦5C購01”, 5:“力成元大57購05”, 6:“啟碁元大61購06”,
+7:“啟碁元大61購04”, 8:“啟碁元大61購03”, 9:“強茂永豐57購03”,
+10:“強茂元大55購02”, 11:“啟碁富邦5C購01”, 12:“啟碁元大61購06”,
+13:“聯發科元大61購16”, 14:“聯發科元大61購15”, 15:“聯發科元大5A購05”,
+16:“聯發科元大61購18”, 17:“聯發科元大61購16”, 18:“聯發科元大61購13”,
+19:“國巨統一6B購03”, 20:“順達統一61購01”, 21:“台虹統一6C購01”,
+22:“富喬統一62購02”, 23:“精材元大61購04”, 24:“富喬統一61購04”,
+25:“強茂永豐57購03”, 26:“惠特統一61購03”,
+};
+
+// ─── Closed trades ───────────────────────────────────────────────────────────
+const INIT_CLOSED = [
+{id:1, date:“2026/04/08”,avgPrice:0.71,shares:4000, revenue:2840, cost:2100, profit:718,  roi:34.19},
+{id:2, date:“2026/04/09”,avgPrice:1.08,shares:8000, revenue:8640, cost:4940, profit:3672, roi:74.33},
+{id:3, date:“2026/04/10”,avgPrice:0.45,shares:5000, revenue:2250, cost:2570, profit:-342, roi:-13.31},
+{id:4, date:“2026/04/10”,avgPrice:0.87,shares:2000, revenue:1740, cost:830,  profit:889,  roi:107.11},
+{id:5, date:“2026/04/10”,avgPrice:0.68,shares:4000, revenue:2720, cost:2380, profit:318,  roi:13.36},
+{id:6, date:“2026/04/13”,avgPrice:1.3, shares:3000, revenue:3900, cost:1785, profit:2092, roi:117.20},
+{id:7, date:“2026/04/13”,avgPrice:1.55,shares:3000, revenue:4650, cost:2150, profit:2476, roi:115.16},
+{id:8, date:“2026/04/13”,avgPrice:1.2, shares:3000, revenue:3600, cost:1580, profit:1997, roi:126.39},
+{id:9, date:“2026/04/13”,avgPrice:0.47,shares:10000,revenue:4700, cost:3220, profit:1456, roi:45.22},
+{id:10,date:“2026/04/13”,avgPrice:0.94,shares:3000, revenue:2820, cost:1640, profit:1158, roi:70.61},
+{id:11,date:“2026/04/15”,avgPrice:1.04,shares:2000, revenue:2080, cost:830,  profit:1228, roi:147.95},
+{id:12,date:“2026/04/15”,avgPrice:1.2, shares:5000, revenue:6000, cost:2975, profit:2999, roi:100.81},
+{id:13,date:“2026/04/16”,avgPrice:0.68,shares:13000,revenue:8860, cost:5310, profit:3502, roi:65.95},
+{id:14,date:“2026/04/16”,avgPrice:1.01,shares:5000, revenue:5050, cost:2670, profit:2355, roi:88.20},
+{id:15,date:“2026/04/16”,avgPrice:0.63,shares:4000, revenue:2520, cost:1249, profit:1249, roi:100.00},
+{id:16,date:“2026/04/17”,avgPrice:0.73,shares:5000, revenue:3650, cost:2010, profit:1617, roi:80.45},
+{id:17,date:“2026/04/17”,avgPrice:0.7, shares:4000, revenue:2800, cost:1412, profit:1366, roi:96.74},
+{id:18,date:“2026/04/17”,avgPrice:0.89,shares:7000, revenue:6260, cost:3170, profit:3045, roi:96.06},
+{id:19,date:“2026/04/17”,avgPrice:0.97,shares:6000, revenue:5820, cost:5480, profit:315,  roi:5.75},
+{id:20,date:“2026/04/21”,avgPrice:0.81,shares:7000, revenue:5670, cost:5710, profit:-65,  roi:-1.14},
+{id:21,date:“2026/04/21”,avgPrice:0.91,shares:6000, revenue:5460, cost:5000, profit:435,  roi:8.70},
+{id:22,date:“2026/04/21”,avgPrice:0.96,shares:4000, revenue:3840, cost:3620, profit:197,  roi:5.44},
+{id:23,date:“2026/04/22”,avgPrice:0.64,shares:6000, revenue:3840, cost:3140, profit:677,  roi:21.56},
+{id:24,date:“2026/04/22”,avgPrice:0.73,shares:4000, revenue:2920, cost:3020, profit:-122, roi:-4.04},
+{id:25,date:“2026/04/22”,avgPrice:0.52,shares:7000, revenue:3640, cost:6454, profit:-2837,roi:-43.96},
+{id:26,date:“2026/04/22”,avgPrice:0.49,shares:5000, revenue:2450, cost:2870, profit:-442, roi:-15.40},
+];
+
+// ─── Open positions (currentPrice is editable) ───────────────────────────────
+const INIT_OPEN = [
+{id:1, product:“鴻海統一68購03”,   shares:10000,currentPrice:0.36,avgCost:0.37, holdCost:3720},
+{id:2, product:“強茂統一5C購01”,   shares:6000, currentPrice:0.51,avgCost:0.77, holdCost:4660},
+{id:3, product:“強茂統一71購01”,   shares:2000, currentPrice:0.73,avgCost:0.90, holdCost:1820},
+{id:4, product:“惠特統一61購01”,   shares:5000, currentPrice:0.49,avgCost:0.85, holdCost:4270},
+{id:5, product:“力成元大57購12”,   shares:5000, currentPrice:0.49,avgCost:0.62, holdCost:3120},
+{id:6, product:“強茂永豐57購03”,   shares:13000,currentPrice:0.41,avgCost:0.76, holdCost:9926},
+{id:7, product:“聯發科元大5A購05”, shares:5000, currentPrice:1.57,avgCost:0.31, holdCost:1561},
+{id:8, product:“台積電元大58購01”, shares:12000,currentPrice:1.26,avgCost:0.61, holdCost:7360},
+{id:9, product:“聯發科元大61購11”, shares:13000,currentPrice:1.39,avgCost:0.83, holdCost:10810},
+{id:10,product:“聯發科元大61購16”, shares:12000,currentPrice:1.63,avgCost:0.79, holdCost:9538},
+{id:11,product:“聯發科中信63購01”, shares:8000, currentPrice:1.02,avgCost:0.82, holdCost:6560},
+{id:12,product:“聯發科元大61購18”, shares:5000, currentPrice:1.41,avgCost:0.73, holdCost:3670},
+{id:13,product:“臺指2X中信63購03”, shares:6000, currentPrice:0.70,avgCost:0.55, holdCost:3320},
+{id:14,product:“聯發科統一62購01”, shares:12000,currentPrice:1.19,avgCost:0.65, holdCost:7820},
+{id:15,product:“公勝保經”,         shares:1000, currentPrice:79,  avgCost:88.9,  holdCost:88900},
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+const fmt = (n,d=0) => typeof n===“number” ? n.toLocaleString(“zh-TW”,{minimumFractionDigits:d,maximumFractionDigits:d}) : “—”;
+const pct = n => `${n>=0?"+":""}${n.toFixed(2)}%`;
+// Live P&L calculation from currentPrice
+const calcOpen = t => {
+const mv = t.currentPrice * t.shares;
+const estProfit = mv - t.holdCost;
+const estRoi = (estProfit / t.holdCost) * 100;
+const breakEven = parseFloat((t.holdCost / t.shares).toFixed(3));
+return { …t, marketValue: mv, estProfit, estRoi, breakEven };
+};
+
+// ─── Design tokens (luxury deep navy + champagne gold) ────────────────────────
+const T = {
+bg:       “#0d1117”,
+bg2:      “#131a25”,
+bg3:      “#192031”,
+card:     “#1a2336”,
+cardHov:  “#1f2b40”,
+border:   “#243048”,
+borderGold:“rgba(212,175,83,0.3)”,
+gold:     “#d4af53”,
+goldLight:”#f0d080”,
+goldDim:  “rgba(212,175,83,0.12)”,
+goldGlow: “rgba(212,175,83,0.06)”,
+text:     “#e8edf5”,
+textDim:  “#8a9bbf”,
+textFaint:”#4a5a7a”,
+profit:   “#34d399”,
+profitDim:“rgba(52,211,153,0.12)”,
+loss:     “#f87171”,
+lossDim:  “rgba(248,113,113,0.12)”,
+blue:     “#60a5fa”,
+blueDim:  “rgba(96,165,250,0.12)”,
+};
+
+// ─── Gradient backgrounds for stat cards ─────────────────────────────────────
+const cardGradients = [
+`linear-gradient(135deg, #1a2e1a 0%, ${T.card} 60%)`,
+`linear-gradient(135deg, #1a1a2e 0%, ${T.card} 60%)`,
+`linear-gradient(135deg, #2e2a1a 0%, ${T.card} 60%)`,
+`linear-gradient(135deg, #1a2e2e 0%, ${T.card} 60%)`,
+`linear-gradient(135deg, #2a1a2e 0%, ${T.card} 60%)`,
+`linear-gradient(135deg, #2e1a1a 0%, ${T.card} 60%)`,
+];
+
+// ─── Custom bar label ─────────────────────────────────────────────────────────
+const BarValLabel = ({x,y,width,height,value}) => {
+if(!value) return null;
+const pos = value>=0;
+return <text x={x+width/2} y={pos?y-7:y+height+15} textAnchor="middle"
+fontSize={11} fontWeight={700} fill={pos?T.profit:T.loss}
+fontFamily="'Noto Sans TC',sans-serif">{pos?”+”:””}{value.toLocaleString()}</text>;
+};
+
+// ─── Decorative hexagon SVG ───────────────────────────────────────────────────
+const HexDecor = ({size=120,opacity=0.04}) => (
+<svg width={size} height={size} viewBox=“0 0 100 100” style={{position:“absolute”,pointerEvents:“none”,opacity}}>
+<polygon points="50,2 93,26 93,74 50,98 7,74 7,26" fill="none" stroke={T.gold} strokeWidth="1"/>
+<polygon points="50,12 83,30 83,70 50,88 17,70 17,30" fill="none" stroke={T.gold} strokeWidth="0.5"/>
+</svg>
+);
+
+// ─── Inline editable price cell ───────────────────────────────────────────────
+const PriceCell = ({value, onChange}) => {
+const [editing, setEditing] = useState(false);
+const [draft, setDraft] = useState(String(value));
+const commit = () => {
+const n = parseFloat(draft);
+if(!isNaN(n) && n>0) onChange(n);
+setEditing(false);
+};
+if(editing) return (
+<input autoFocus value={draft}
+onChange={e=>setDraft(e.target.value)}
+onBlur={commit} onKeyDown={e=>{if(e.key===“Enter”)commit();if(e.key===“Escape”)setEditing(false);}}
+style={{width:70,background:T.bg2,border:`1px solid ${T.gold}`,color:T.goldLight,
+padding:“3px 7px”,borderRadius:5,fontSize:13,fontFamily:“inherit”,outline:“none”,textAlign:“right”}}/>
+);
+return (
+<span onClick={()=>{setDraft(String(value));setEditing(true);}}
+title=“點擊編輯現價”
+style={{cursor:“pointer”,color:T.goldLight,fontWeight:700,borderBottom:`1px dashed ${T.gold}`,paddingBottom:1,fontSize:14}}>
+{value}
+</span>
+);
+};
+
+export default function Dashboard() {
+const [closed, setClosed]   = useState(INIT_CLOSED);
+const [openRaw, setOpenRaw] = useState(INIT_OPEN);
+const [tab, setTab]         = useState(“overview”);
+const [chartMode, setChartMode] = useState(“area”);
+const [filterDate, setFilterDate] = useState(””);
+const [newT, setNewT] = useState({date:””,product:””,action:“買”,price:””,shares:””,note:””});
+
+// Live-compute open positions
+const open = useMemo(() => openRaw.map(calcOpen), [openRaw]);
+
+const updatePrice = useCallback((id, price) => {
+setOpenRaw(prev => prev.map(t => t.id===id ? {…t, currentPrice: price} : t));
+}, []);
+
+// Stats
+const totalClosed  = useMemo(()=>closed.reduce((s,t)=>s+t.profit,0),[closed]);
+const openOptions  = useMemo(()=>open.filter(t=>t.product!==“公勝保經”),[open]);
+const totalOpenEst = useMemo(()=>openOptions.reduce((s,t)=>s+t.estProfit,0),[openOptions]);
+const wins = useMemo(()=>closed.filter(t=>t.profit>0).length,[closed]);
+
+// Chart
+const allChart = useMemo(()=>{
+const byDate={};
+closed.forEach(t=>{byDate[t.date]=(byDate[t.date]||0)+t.profit;});
+let cum=0;
+return Object.keys(byDate).sort().map(d=>{
+cum+=byDate[d];
+return {fullDate:d,date:d.slice(5),daily:byDate[d],cumulative:cum};
+});
+},[closed]);
+
+const filteredChart = useMemo(()=>{
+if(!filterDate) return allChart;
+const norm=s=>s.replace(/[-/]/g,””);
+return allChart.filter(r=>norm(r.fullDate)>=norm(filterDate));
+},[allChart,filterDate]);
+
+const addTrade = () => {
+if(!newT.date||!newT.product||!newT.price||!newT.shares) return;
+const price=parseFloat(newT.price), shares=parseInt(newT.shares);
+if(newT.action===“賣”){
+const revenue=price*shares;
+setClosed(p=>[…p,{id:p.length+1,date:newT.date,avgPrice:price,shares,revenue,cost:0,profit:0,roi:0}]);
+} else {
+setOpenRaw(p=>[…p,{id:p.length+1,product:newT.product,shares,currentPrice:price,avgCost:price,holdCost:price*shares}]);
+}
+setNewT({date:””,product:””,action:“買”,price:””,shares:””,note:””});
+setTab(“overview”);
+};
+
+// ─── Styles ────────────────────────────────────────────────────────────────
+const css = {
+root:{fontFamily:”‘Noto Sans TC’,‘PingFang TC’,‘Microsoft JhengHei’,sans-serif”,
+background:T.bg, minHeight:“100vh”, color:T.text, fontSize:14,
+backgroundImage:`radial-gradient(ellipse at 20% 0%, rgba(212,175,83,0.04) 0%, transparent 60%), radial-gradient(ellipse at 80% 100%, rgba(96,165,250,0.04) 0%, transparent 60%)`},
+
+```
+hdr:{background:`linear-gradient(180deg, ${T.bg2} 0%, ${T.bg3} 100%)`,
+  borderBottom:`1px solid ${T.borderGold}`,padding:"20px 32px",
+  display:"flex",alignItems:"center",justifyContent:"space-between",
+  boxShadow:"0 4px 24px rgba(0,0,0,0.4)",position:"relative",overflow:"hidden"},
+
+nav:{background:T.bg2,display:"flex",gap:4,padding:"10px 28px",
+  borderBottom:`1px solid ${T.border}`,flexWrap:"wrap",
+  boxShadow:"0 2px 12px rgba(0,0,0,0.3)"},
+
+navB: a=>({
+  background: a?`linear-gradient(135deg, ${T.gold}, #b8932a)`:"transparent",
+  color: a?T.bg:T.textDim,
+  border: a?"none":`1px solid ${T.border}`,
+  padding:"8px 20px",borderRadius:6,cursor:"pointer",
+  fontSize:13,fontWeight:a?700:400,fontFamily:"inherit",
+  boxShadow: a?"0 2px 12px rgba(212,175,83,0.3)":"none",
+  transition:"all .2s",letterSpacing:0.5,
+}),
+
+body:{padding:"24px 28px"},
+
+grid:{display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(170px,1fr))",gap:14,marginBottom:24},
+
+statCard:(i)=>({
+  background: cardGradients[i%6],
+  border:`1px solid ${T.borderGold}`,borderRadius:14,padding:"20px 22px",
+  position:"relative",overflow:"hidden",
+  boxShadow:"0 4px 20px rgba(0,0,0,0.3), inset 0 1px 0 rgba(212,175,83,0.1)",
+}),
+
+sec:{background:T.card,border:`1px solid ${T.border}`,borderRadius:14,overflow:"hidden",
+  marginBottom:20,boxShadow:"0 4px 20px rgba(0,0,0,0.25)"},
+
+secHd:{padding:"14px 22px",borderBottom:`1px solid ${T.border}`,
+  display:"flex",alignItems:"center",justifyContent:"space-between",
+  background:`linear-gradient(90deg, ${T.bg3} 0%, ${T.card} 100%)`},
+
+sTtl:{fontSize:11,letterSpacing:3,color:T.gold,fontWeight:700,textTransform:"uppercase"},
+
+tbl:{width:"100%",borderCollapse:"collapse",fontSize:13},
+th:{background:T.bg3,color:T.textFaint,fontSize:10,letterSpacing:2,textTransform:"uppercase",
+  padding:"11px 14px",textAlign:"left",borderBottom:`1px solid ${T.border}`,whiteSpace:"nowrap"},
+td:{padding:"11px 14px",borderBottom:`1px solid ${T.border}`,verticalAlign:"middle"},
+
+badge: p=>({display:"inline-block",padding:"3px 10px",borderRadius:5,fontSize:12,fontWeight:700,
+  background:p>=0?T.profitDim:T.lossDim, color:p>=0?T.profit:T.loss,
+  border:`1px solid ${p>=0?"rgba(52,211,153,0.2)":"rgba(248,113,113,0.2)"}`}),
+
+inp:{background:T.bg2,border:`1px solid ${T.border}`,color:T.text,
+  padding:"9px 14px",borderRadius:8,fontSize:14,fontFamily:"inherit",
+  outline:"none",width:"100%",boxSizing:"border-box",
+  transition:"border-color .2s"},
+
+btnGold:{background:`linear-gradient(135deg, ${T.gold}, #b8932a)`,color:T.bg,
+  border:"none",padding:"11px 28px",borderRadius:8,fontSize:14,fontWeight:700,
+  cursor:"pointer",fontFamily:"inherit",
+  boxShadow:"0 3px 14px rgba(212,175,83,0.35)"},
+
+btnGhost:{background:"transparent",color:T.textDim,
+  border:`1px solid ${T.border}`,padding:"9px 20px",borderRadius:8,
+  fontSize:13,cursor:"pointer",fontFamily:"inherit"},
+```
+
+};
+
+const TABS=[
+{key:“overview”,label:“總覽”},
+{key:“open”,label:“持倉明細”},
+{key:“closed”,label:“已實現損益”},
+{key:“chart”,label:“圖表分析”},
+{key:“add”,label:“＋ 新增交易”},
+];
+
+const tooltipStyle={background:T.card,border:`1px solid ${T.borderGold}`,
+fontSize:12,borderRadius:8,color:T.text,boxShadow:“0 4px 20px rgba(0,0,0,0.5)”};
+
+return (
+<div style={css.root}>
+{/* ── Header ── */}
+<div style={css.hdr}>
+<HexDecor size={180} opacity={0.06}/>
+<div style={{position:“relative”}}>
+<div style={{fontSize:10,letterSpacing:5,color:T.goldLight,textTransform:“uppercase”,marginBottom:5,opacity:0.8}}>
+PRIVATE PORTFOLIO
+</div>
+<div style={{fontSize:24,fontWeight:800,color:T.text,letterSpacing:1}}>
+選擇權投資儀表板
+</div>
+<div style={{fontSize:11,color:T.textDim,marginTop:3,letterSpacing:1}}>
+Options Tracker · 2026
+</div>
+</div>
+<div style={{textAlign:“right”,position:“relative”}}>
+<div style={{fontSize:11,color:T.textDim,letterSpacing:2,marginBottom:4}}>已實現 ＋ 持倉估算</div>
+<div style={{fontSize:30,fontWeight:800,
+background:`linear-gradient(135deg, ${T.goldLight}, ${T.gold})`,
+WebkitBackgroundClip:“text”,WebkitTextFillColor:“transparent”,letterSpacing:1}}>
+{fmt(totalClosed+totalOpenEst)}
+</div>
+</div>
+</div>
+
+```
+  {/* ── Nav ── */}
+  <div style={css.nav}>
+    {TABS.map(t=><button key={t.key} style={css.navB(tab===t.key)} onClick={()=>setTab(t.key)}>{t.label}</button>)}
+  </div>
+
+  <div style={css.body}>
+
+    {/* ════ OVERVIEW ════ */}
+    {tab==="overview" && (<>
+      <div style={css.grid}>
+        {[
+          {label:"已實現總損益",val:`+${fmt(totalClosed)}`,sub:`${closed.length} 筆已結算`,col:T.profit},
+          {label:"持倉預估損益",val:`${totalOpenEst>=0?"+":""}${fmt(totalOpenEst)}`,sub:`${openOptions.length} 個選擇權部位`,col:totalOpenEst>=0?T.profit:T.loss},
+          {label:"合計估算損益",val:fmt(totalClosed+totalOpenEst),sub:"含未平倉",col:T.gold},
+          {label:"交易勝率",val:`${((wins/closed.length)*100).toFixed(1)}%`,sub:`${wins} 勝 / ${closed.length-wins} 敗`,col:T.profit},
+          {label:"已實現平均報酬",val:`${(closed.reduce((s,t)=>s+t.roi,0)/closed.length).toFixed(1)}%`,sub:"每筆平均",col:T.blue},
+          {label:"最佳單筆損益",val:`+${fmt([...closed].sort((a,b)=>b.profit-a.profit)[0]?.profit)}`,
+            sub:FULL_NAMES[[...closed].sort((a,b)=>b.profit-a.profit)[0]?.id],col:T.profit},
+        ].map((c,i)=>(
+          <div key={i} style={css.statCard(i)}>
+            <HexDecor size={90} opacity={0.07}/>
+            <div style={{position:"relative"}}>
+              <div style={{fontSize:9,letterSpacing:2.5,color:T.textFaint,textTransform:"uppercase",marginBottom:8}}>{c.label}</div>
+              <div style={{fontSize:26,fontWeight:800,color:c.col,letterSpacing:0.5,lineHeight:1}}>{c.val}</div>
+              <div style={{fontSize:11,color:T.textDim,marginTop:6,wordBreak:"break-all"}}>{c.sub}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Mini area chart preview */}
+      <div style={{...css.sec,marginBottom:20}}>
+        <div style={css.secHd}>
+          <span style={css.sTtl}>累計損益走勢預覽</span>
+          <span style={{fontSize:11,color:T.profit,fontWeight:700}}>+{fmt(totalClosed)} 已實現</span>
+        </div>
+        <div style={{padding:"16px 8px 8px"}}>
+          <ResponsiveContainer width="100%" height={140}>
+            <AreaChart data={allChart} margin={{left:4,right:8,top:4,bottom:4}}>
+              <defs>
+                <linearGradient id="goldGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={T.gold} stopOpacity={0.3}/>
+                  <stop offset="100%" stopColor={T.gold} stopOpacity={0.0}/>
+                </linearGradient>
+              </defs>
+              <CartesianGrid strokeDasharray="3 3" stroke={T.border}/>
+              <XAxis dataKey="date" tick={{fill:T.textFaint,fontSize:10}} axisLine={false} tickLine={false}/>
+              <YAxis hide/>
+              <Tooltip contentStyle={tooltipStyle} formatter={v=>[`+${v.toLocaleString()} 元`,"累計"]}/>
+              <Area type="monotone" dataKey="cumulative" stroke={T.gold} strokeWidth={2.5}
+                fill="url(#goldGrad)" dot={false}/>
+            </AreaChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* Holdings table */}
+      <div style={css.sec}>
+        <div style={css.secHd}><span style={css.sTtl}>持倉排行（預估損益由高到低）</span></div>
+        <div style={{overflowX:"auto"}}>
+          <table style={css.tbl}>
+            <thead><tr>
+              {["商品","持股數","現價 ✎","成本","預估損益","預估獲利率"].map(h=><th key={h} style={css.th}>{h}</th>)}
+            </tr></thead>
+            <tbody>
+              {[...openOptions].sort((a,b)=>b.estProfit-a.estProfit).map(t=>(
+                <tr key={t.id} style={{background:t.estProfit>=0?T.profitDim:T.lossDim}}>
+                  <td style={{...css.td,fontWeight:700,color:T.goldLight,whiteSpace:"nowrap"}}>{t.product}</td>
+                  <td style={{...css.td,color:T.textDim}}>{fmt(t.shares)}</td>
+                  <td style={css.td}><PriceCell value={t.currentPrice} onChange={p=>updatePrice(t.id,p)}/></td>
+                  <td style={{...css.td,color:T.textDim}}>{t.avgCost}</td>
+                  <td style={css.td}><span style={css.badge(t.estProfit)}>{t.estProfit>=0?"+":""}{fmt(t.estProfit)}</span></td>
+                  <td style={css.td}><span style={{color:t.estRoi>=0?T.profit:T.loss,fontWeight:700}}>{pct(t.estRoi)}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>)}
+
+    {/* ════ OPEN POSITIONS ════ */}
+    {tab==="open" && (<>
+      <div style={{background:T.goldDim,border:`1px solid ${T.borderGold}`,borderRadius:10,padding:"10px 18px",
+        marginBottom:16,fontSize:13,color:T.gold,display:"flex",alignItems:"center",gap:8}}>
+        <span>✎</span>
+        <span>點擊「現價」欄位中的數字即可編輯，按 Enter 或點擊其他區域確認，<strong>預估損益與獲利率</strong>會即時自動更新。</span>
+      </div>
+      <div style={css.sec}>
+        <div style={css.secHd}>
+          <span style={css.sTtl}>未平倉部位明細（{open.length} 檔）</span>
+          <span style={{fontSize:13,color:totalOpenEst>=0?T.profit:T.loss,fontWeight:700}}>
+            預估總損益：{totalOpenEst>=0?"+":""}{fmt(totalOpenEst)}
+          </span>
+        </div>
+        <div style={{overflowX:"auto"}}>
+          <table style={css.tbl}>
+            <thead><tr>
+              {["商品","持股數","現價 ✎","成本均價","股票市值","持有成本","預估損益","預估獲利率","損益平衡"].map(h=><th key={h} style={css.th}>{h}</th>)}
+            </tr></thead>
+            <tbody>
+              {open.map(t=>(
+                <tr key={t.id} style={{background:t.estProfit>=0?T.profitDim:T.lossDim}}>
+                  <td style={{...css.td,fontWeight:700,color:T.goldLight,whiteSpace:"nowrap"}}>{t.product}</td>
+                  <td style={{...css.td,color:T.textDim}}>{fmt(t.shares)}</td>
+                  <td style={css.td}><PriceCell value={t.currentPrice} onChange={p=>updatePrice(t.id,p)}/></td>
+                  <td style={{...css.td,color:T.textDim}}>{t.avgCost}</td>
+                  <td style={{...css.td,color:T.textDim}}>{fmt(t.marketValue)}</td>
+                  <td style={{...css.td,color:T.textDim}}>{fmt(-t.holdCost)}</td>
+                  <td style={css.td}><span style={css.badge(t.estProfit)}>{t.estProfit>=0?"+":""}{fmt(t.estProfit)}</span></td>
+                  <td style={css.td}><span style={{color:t.estRoi>=0?T.profit:T.loss,fontWeight:700,fontSize:14}}>{pct(t.estRoi)}</span></td>
+                  <td style={{...css.td,color:T.textDim}}>{t.breakEven}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </>)}
+
+    {/* ════ CLOSED TRADES ════ */}
+    {tab==="closed" && (
+      <div style={css.sec}>
+        <div style={css.secHd}>
+          <span style={css.sTtl}>已實現損益（{closed.length} 筆）</span>
+          <span style={{fontSize:13,color:T.profit,fontWeight:700}}>總計：+{fmt(totalClosed)}</span>
+        </div>
+        <div style={{overflowX:"auto"}}>
+          <table style={css.tbl}>
+            <thead><tr>
+              {["日期","商品全名","成交均價","成交股數","成交價金","投資成本","損益","獲利率%"].map(h=><th key={h} style={css.th}>{h}</th>)}
+            </tr></thead>
+            <tbody>
+              {[...closed].reverse().map(t=>(
+                <tr key={t.id} style={{background:t.profit>=0?T.profitDim:T.lossDim}}>
+                  <td style={{...css.td,color:T.textDim,whiteSpace:"nowrap",fontSize:12}}>{t.date}</td>
+                  <td style={{...css.td,fontWeight:700,color:T.goldLight,whiteSpace:"nowrap"}}>{FULL_NAMES[t.id]||"—"}</td>
+                  <td style={{...css.td,color:T.textDim}}>{t.avgPrice}</td>
+                  <td style={{...css.td,color:T.textDim}}>{fmt(t.shares)}</td>
+                  <td style={{...css.td,color:T.textDim}}>{fmt(t.revenue)}</td>
+                  <td style={{...css.td,color:T.textDim}}>{fmt(t.cost)}</td>
+                  <td style={css.td}><span style={css.badge(t.profit)}>{t.profit>=0?"+":""}{fmt(t.profit)}</span></td>
+                  <td style={css.td}><span style={{color:t.roi>=0?T.profit:T.loss,fontWeight:700,fontSize:13}}>{pct(t.roi)}</span></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    )}
+
+    {/* ════ CHART ════ */}
+    {tab==="chart" && (<>
+      <div style={{display:"flex",gap:14,marginBottom:16,alignItems:"flex-end",flexWrap:"wrap"}}>
+        <div>
+          <div style={{fontSize:9,letterSpacing:2,color:T.textFaint,textTransform:"uppercase",marginBottom:6}}>圖表類型</div>
+          <div style={{display:"flex",gap:6}}>
+            {[["area","累計走勢"],["bar","每日損益"]].map(([k,l])=>(
+              <button key={k} style={css.navB(chartMode===k)} onClick={()=>setChartMode(k)}>{l}</button>
+            ))}
+          </div>
+        </div>
+        <div style={{minWidth:200}}>
+          <div style={{fontSize:9,letterSpacing:2,color:T.textFaint,textTransform:"uppercase",marginBottom:6}}>篩選起始日期</div>
+          <input type="date" style={css.inp} value={filterDate} onChange={e=>setFilterDate(e.target.value)}/>
+        </div>
+        {filterDate&&<button style={css.btnGhost} onClick={()=>setFilterDate("")}>✕ 清除</button>}
+      </div>
+
+      {filterDate&&(
+        <div style={{background:T.goldDim,border:`1px solid ${T.borderGold}`,borderRadius:8,
+          padding:"8px 16px",fontSize:12,color:T.gold,marginBottom:14}}>
+          顯示 <strong>{filterDate}</strong> 起共 <strong>{filteredChart.length}</strong> 個交易日
+        </div>
+      )}
+
+      <div style={css.sec}>
+        <div style={css.secHd}>
+          <span style={css.sTtl}>{chartMode==="area"?"累計損益走勢":"每日損益（含數值標籤）"}</span>
+        </div>
+        <div style={{padding:"20px 8px 12px"}}>
+          <ResponsiveContainer width="100%" height={320}>
+            {chartMode==="area" ? (
+              <AreaChart data={filteredChart} margin={{left:8,right:16,top:16,bottom:8}}>
+                <defs>
+                  <linearGradient id="cumGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={T.gold} stopOpacity={0.35}/>
+                    <stop offset="100%" stopColor={T.gold} stopOpacity={0.0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke={T.border}/>
+                <XAxis dataKey="date" tick={{fill:T.textFaint,fontSize:11}} axisLine={false} tickLine={false}/>
+                <YAxis tick={{fill:T.textFaint,fontSize:11}} axisLine={false} tickLine={false}/>
+                <Tooltip contentStyle={tooltipStyle} formatter={v=>[`${v>=0?"+":""}${v.toLocaleString()} 元`,"累計損益"]}/>
+                <Area type="monotone" dataKey="cumulative" stroke={T.gold} strokeWidth={2.5}
+                  fill="url(#cumGrad)" dot={{fill:T.gold,r:3}} activeDot={{r:6}}/>
+              </AreaChart>
+            ) : (
+              <BarChart data={filteredChart} margin={{left:8,right:16,top:36,bottom:8}}>
+                <CartesianGrid strokeDasharray="3 3" stroke={T.border}/>
+                <XAxis dataKey="date" tick={{fill:T.textFaint,fontSize:11}} axisLine={false} tickLine={false}/>
+                <YAxis tick={{fill:T.textFaint,fontSize:11}} axisLine={false} tickLine={false}/>
+                <Tooltip contentStyle={tooltipStyle} formatter={v=>[`${v>=0?"+":""}${v.toLocaleString()} 元`,"當日損益"]}/>
+                <Bar dataKey="daily" radius={[5,5,0,0]}>
+                  <LabelList dataKey="daily" content={<BarValLabel/>}/>
+                  {filteredChart.map((e,i)=><Cell key={i} fill={e.daily>=0?T.profit:T.loss}/>)}
+                </Bar>
+              </BarChart>
+            )}
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div style={css.sec}>
+        <div style={css.secHd}><span style={css.sTtl}>各交易日明細</span></div>
+        <table style={css.tbl}>
+          <thead><tr>{["日期","當日損益","累計損益","交易筆數"].map(h=><th key={h} style={css.th}>{h}</th>)}</tr></thead>
+          <tbody>
+            {filteredChart.map((r,i)=>(
+              <tr key={i} style={{background:r.daily>=0?T.profitDim:T.lossDim}}>
+                <td style={{...css.td,color:T.textDim}}>{r.fullDate}</td>
+                <td style={css.td}><span style={css.badge(r.daily)}>{r.daily>=0?"+":""}{fmt(r.daily)}</span></td>
+                <td style={{...css.td,color:r.cumulative>=0?T.profit:T.loss,fontWeight:700}}>{r.cumulative>=0?"+":""}{fmt(r.cumulative)}</td>
+                <td style={{...css.td,color:T.textDim}}>{closed.filter(t=>t.date===r.fullDate).length}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </>)}
+
+    {/* ════ ADD TRADE ════ */}
+    {tab==="add" && (
+      <div style={{...css.sec,maxWidth:520}}>
+        <div style={css.secHd}><span style={css.sTtl}>新增交易記錄</span></div>
+        <div style={{padding:26,display:"flex",flexDirection:"column",gap:16}}>
+          {[
+            {lbl:"交易日期",el:<input type="date" style={css.inp} value={newT.date} onChange={e=>setNewT(p=>({...p,date:e.target.value}))}/>},
+            {lbl:"商品全名",el:<input style={css.inp} placeholder="例：聯發科元大61購11" value={newT.product} onChange={e=>setNewT(p=>({...p,product:e.target.value}))}/>},
+            {lbl:"交易方向",el:(
+              <div style={{display:"flex",gap:8}}>
+                {["買","賣"].map(a=><button key={a} style={css.navB(newT.action===a)} onClick={()=>setNewT(p=>({...p,action:a}))}>{a}</button>)}
+              </div>
+            )},
+            {lbl:"成交價格",el:<input type="number" step="0.01" style={css.inp} placeholder="0.00" value={newT.price} onChange={e=>setNewT(p=>({...p,price:e.target.value}))}/>},
+            {lbl:"成交股數",el:<input type="number" style={css.inp} placeholder="例：5000" value={newT.shares} onChange={e=>setNewT(p=>({...p,shares:e.target.value}))}/>},
+            {lbl:"備註（選填）",el:<input style={css.inp} value={newT.note} onChange={e=>setNewT(p=>({...p,note:e.target.value}))}/>},
+          ].map(({lbl,el})=>(
+            <div key={lbl}>
+              <div style={{fontSize:9,letterSpacing:2.5,color:T.textFaint,textTransform:"uppercase",marginBottom:6}}>{lbl}</div>
+              {el}
+            </div>
+          ))}
+          {newT.price&&newT.shares&&(
+            <div style={{background:T.goldDim,border:`1px solid ${T.borderGold}`,borderRadius:8,
+              padding:"10px 16px",fontSize:13,color:T.gold}}>
+              預計成交金額：<strong style={{fontSize:16}}>{fmt(parseFloat(newT.price||0)*parseInt(newT.shares||0))}</strong> 元
+            </div>
+          )}
+          <div style={{display:"flex",gap:12,paddingTop:4}}>
+            <button style={css.btnGold} onClick={addTrade}>確認新增</button>
+            <button style={css.btnGhost} onClick={()=>setTab("overview")}>取消</button>
+          </div>
+        </div>
+      </div>
+    )}
+
+  </div>
+</div>
+```
+
+);
+}

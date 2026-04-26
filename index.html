@@ -516,8 +516,10 @@ function renderOverview(){
   </div>`;
 }
 
-// ═══════════ OPEN — click-to-edit ═══════════════════════════
+// ═══════════ OPEN — click-to-edit + drag-to-reorder ════════
 let editingOpen=new Set();
+let dragSrcId=null; // id of row being dragged
+
 function renderOpen(){
   document.getElementById('pv-open').innerHTML=`
   <div class="sec">
@@ -527,22 +529,38 @@ function renderOpen(){
     </div>
     <div class="tw"><table>
       <thead><tr>
+        <th style="width:32px"></th>
         <th>商品</th><th>持股數</th><th>現價</th><th>成本均價</th>
         <th>市值</th><th>持有成本</th><th>預估損益</th><th>預估獲利率</th><th>損益平衡</th><th>操作</th>
       </tr></thead>
       <tbody id="open-body"></tbody>
     </table></div>
-    <div class="tip">點擊「編輯」後修改欄位，按「儲存」確認，損益自動重算</div>
+    <div class="tip">☰ 拖拉左側圖示可調整順序 · 點擊「編輯」修改欄位後按「儲存」確認</div>
   </div>`;
   editingOpen.clear();
   renderOpenRows();
 }
+
 function renderOpenRows(){
   const tbody=document.getElementById('open-body'); if(!tbody) return;
   tbody.innerHTML=openPos.map(p=>{
     const editing=editingOpen.has(p.id);
     const rowBg=ep(p)>=0?'var(--profit-bg)':'var(--loss-bg)';
-    if(!editing) return `<tr style="background:${rowBg}">
+
+    // handle column — always shown, enables drag
+    const handleTd=`<td style="padding:0 6px 0 12px;width:32px">
+      <span class="drag-handle" title="拖拉排序">⠿</span>
+    </td>`;
+
+    if(!editing) return `
+    <tr data-id="${p.id}" style="background:${rowBg}"
+        draggable="true"
+        ondragstart="onDragStart(event,${p.id})"
+        ondragover="onDragOver(event)"
+        ondragleave="onDragLeave(event)"
+        ondrop="onDrop(event,${p.id})"
+        ondragend="onDragEnd(event)">
+      ${handleTd}
       <td class="td-name">${p.product}</td>
       <td>${fmt(p.shares)}</td>
       <td class="${pc(ep(p))}" style="font-weight:700">${p.price}</td>
@@ -557,11 +575,15 @@ function renderOpenRows(){
         <button class="rab btn-del"  onclick="delOpen(${p.id})">刪除</button>
       </td>
     </tr>`;
-    return `<tr style="background:${rowBg}" id="or-${p.id}">
+
+    // editing mode — draggable=false so inputs work normally
+    return `
+    <tr data-id="${p.id}" style="background:${rowBg}" id="or-${p.id}" draggable="false">
+      ${handleTd}
       <td><input class="edit-inp wide" id="pn-${p.id}" value="${p.product}"/></td>
       <td><input class="edit-inp" id="ps-${p.id}" type="number" value="${p.shares}" style="min-width:80px"/></td>
       <td><input class="edit-inp" id="pp-${p.id}" type="number" step="0.01" value="${p.price}" style="min-width:75px"/></td>
-      <td><input class="edit-inp" id="pc-${p.id}" type="number" step="0.01" value="${p.cost}"  style="min-width:75px"/></td>
+      <td><input class="edit-inp" id="pc-${p.id}" type="number" step="0.01" value="${p.cost}" style="min-width:75px"/></td>
       <td id="mv-${p.id}" class="cm" style="font-size:13px">${fmt(mv(p))}</td>
       <td id="hc-${p.id}" class="cm" style="font-size:13px">${fmt(holdCost(p))}</td>
       <td id="ep-${p.id}">${bdg(ep(p),(ep(p)>=0?'+':'')+fmt(ep(p)))}</td>
@@ -573,7 +595,105 @@ function renderOpenRows(){
       </td>
     </tr>`;
   }).join('');
+
+  // ── Touch drag (iOS Safari) ──────────────────────────────
+  initTouchDrag();
 }
+
+// ── Mouse / Desktop drag events ──────────────────────────────
+function onDragStart(e, id){
+  dragSrcId=id;
+  e.dataTransfer.effectAllowed='move';
+  e.dataTransfer.setData('text/plain', id);
+  setTimeout(()=>e.target.classList.add('dragging'), 0);
+}
+function onDragOver(e){
+  e.preventDefault();
+  e.dataTransfer.dropEffect='move';
+  const row=e.currentTarget;
+  if(+row.dataset.id!==dragSrcId) row.classList.add('drag-over');
+}
+function onDragLeave(e){ e.currentTarget.classList.remove('drag-over') }
+function onDrop(e, targetId){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  if(dragSrcId===null||dragSrcId===targetId) return;
+  const fromIdx=openPos.findIndex(p=>p.id===dragSrcId);
+  const toIdx  =openPos.findIndex(p=>p.id===targetId);
+  if(fromIdx<0||toIdx<0) return;
+  const [moved]=openPos.splice(fromIdx,1);
+  openPos.splice(toIdx,0,moved);
+  renderOpenRows();
+}
+function onDragEnd(e){
+  e.target.classList.remove('dragging');
+  document.querySelectorAll('#open-body tr').forEach(r=>r.classList.remove('drag-over'));
+  dragSrcId=null;
+}
+
+// ── Touch drag (iOS / iPad) ──────────────────────────────────
+function initTouchDrag(){
+  const tbody=document.getElementById('open-body'); if(!tbody) return;
+  let touchSrcId=null, clone=null, startY=0, lastOver=null;
+
+  tbody.querySelectorAll('.drag-handle').forEach(handle=>{
+    handle.addEventListener('touchstart', e=>{
+      const row=handle.closest('tr');
+      if(!row||row.draggable===false) return; // skip edit-mode rows
+      touchSrcId=+row.dataset.id;
+      startY=e.touches[0].clientY;
+
+      // ghost clone
+      clone=row.cloneNode(true);
+      clone.style.cssText=`position:fixed;left:${row.getBoundingClientRect().left}px;
+        top:${row.getBoundingClientRect().top}px;width:${row.offsetWidth}px;
+        opacity:.75;pointer-events:none;z-index:999;
+        background:rgba(200,169,110,.15);border:1px solid var(--gold);border-radius:6px;`;
+      document.body.appendChild(clone);
+      row.classList.add('dragging');
+      e.preventDefault();
+    },{passive:false});
+
+    handle.addEventListener('touchmove', e=>{
+      if(!clone||touchSrcId===null) return;
+      const touch=e.touches[0];
+      clone.style.top=(touch.clientY-30)+'px';
+
+      // find which row we're over
+      clone.style.display='none';
+      const el=document.elementFromPoint(touch.clientX, touch.clientY);
+      clone.style.display='';
+      const overRow=el?.closest('tr[data-id]');
+
+      if(lastOver&&lastOver!==overRow) lastOver.classList.remove('drag-over');
+      if(overRow&&+overRow.dataset.id!==touchSrcId){
+        overRow.classList.add('drag-over');
+        lastOver=overRow;
+      }
+      e.preventDefault();
+    },{passive:false});
+
+    handle.addEventListener('touchend', e=>{
+      if(clone){clone.remove();clone=null}
+      if(lastOver){lastOver.classList.remove('drag-over');lastOver=null}
+      const srcRow=tbody.querySelector(`tr[data-id="${touchSrcId}"]`);
+      if(srcRow) srcRow.classList.remove('dragging');
+
+      if(lastOver&&touchSrcId!==null){
+        const targetId=+lastOver.dataset.id;
+        const fromIdx=openPos.findIndex(p=>p.id===touchSrcId);
+        const toIdx  =openPos.findIndex(p=>p.id===targetId);
+        if(fromIdx>=0&&toIdx>=0){
+          const [moved]=openPos.splice(fromIdx,1);
+          openPos.splice(toIdx,0,moved);
+          renderOpenRows();
+        }
+      }
+      touchSrcId=null;
+    });
+  });
+}
+
 function startEditOpen(id){editingOpen.add(id);renderOpenRows()}
 function saveOpen(id){
   const p=openPos.find(o=>o.id===id); if(!p) return;

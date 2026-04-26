@@ -9,41 +9,79 @@
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
+/* ─────────────────────────────────────────────────────────────
+   COLOR SYSTEM
+   profit = #22c55e  (pure green, works on both LCD & OLED)
+   loss   = #f43f5e  (rose-red)
+   gold   = #c8a96e  (warm gold — NAV + accents)
+   Cross-device note: avoid pure sRGB saturated colors;
+   these mid-tone values render consistently on P3 (iPad) and sRGB (iPhone).
+───────────────────────────────────────────────────────────────*/
 :root{
-  --bg:#0c0f1a;--bg2:#121626;--bg3:#181d2e;--surface:#1e2438;
-  --border:rgba(197,163,98,.18);--border2:rgba(197,163,98,.07);
-  --gold:#c5a362;--gold2:#e8cfa0;--gold-dim:rgba(197,163,98,.1);
-  --text:#e8e4dc;--muted:#6e7a96;
-  --profit:#f0c060;--profit-bg:rgba(240,192,96,.07);--profit-bd:rgba(240,192,96,.22);
-  --loss:#f06090;  --loss-bg:rgba(240,96,144,.07);  --loss-bd:rgba(240,96,144,.22);
-  --accent:#7eb8e8;
-  --r:10px;--shadow:0 6px 32px rgba(0,0,0,.4);
-  --fs:15px; /* base font size */
+  --bg:       #0c0f1a;
+  --bg2:      #131726;
+  --bg3:      #191e30;
+  --border:   rgba(200,169,110,.16);
+  --border2:  rgba(200,169,110,.07);
+
+–gold:     #c8a96e;   /* nav active + accents */
+–gold2:    #e2c99a;   /* headings */
+–gold-dim: rgba(200,169,110,.10);
+–gold-bd:  rgba(200,169,110,.28);
+
+–profit:     #22c55e;                      /* GREEN — positive */
+–profit-bg:  rgba(34,197,94,.07);
+–profit-bd:  rgba(34,197,94,.22);
+
+–loss:       #f43f5e;                      /* RED — negative */
+–loss-bg:    rgba(244,63,94,.07);
+–loss-bd:    rgba(244,63,94,.22);
+
+–text:  #e6e1d8;
+–muted: #6b7691;
+
+–r: 10px;
+–shadow: 0 6px 32px rgba(0,0,0,.45);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);
-  min-height:100vh;font-size:var(--fs);line-height:1.55}
-
-body::before{content:’’;position:fixed;inset:0;pointer-events:none;z-index:0;
+body{
+font-family:‘DM Sans’,sans-serif;
+background:var(–bg);
+color:var(–text);
+min-height:100vh;
+font-size:15px;
+line-height:1.55;
+/* force consistent color rendering across devices */
+-webkit-font-smoothing:antialiased;
+color-scheme:dark;
+}
+body::before{
+content:’’;position:fixed;inset:0;pointer-events:none;z-index:0;
 background:
-radial-gradient(ellipse 70% 45% at 85% 5%,rgba(197,163,98,.07) 0%,transparent 55%),
-radial-gradient(ellipse 55% 65% at 5% 85%,rgba(100,130,210,.05) 0%,transparent 55%),
-repeating-linear-gradient(0deg,transparent,transparent 47px,rgba(197,163,98,.018) 48px),
-repeating-linear-gradient(90deg,transparent,transparent 47px,rgba(197,163,98,.018) 48px);}
+radial-gradient(ellipse 65% 40% at 88% 4%, rgba(200,169,110,.07) 0%,transparent 55%),
+radial-gradient(ellipse 50% 60% at 6% 88%, rgba(90,110,190,.05)  0%,transparent 55%),
+repeating-linear-gradient(0deg,  transparent,transparent 47px,rgba(200,169,110,.016) 48px),
+repeating-linear-gradient(90deg, transparent,transparent 47px,rgba(200,169,110,.016) 48px);
+}
 #app{position:relative;z-index:1}
 
 /* ── HEADER ── */
-header{background:linear-gradient(135deg,#090c18 0%,#111526 60%,#160f24 100%);
-border-bottom:1px solid var(–border);padding:0 28px;
+header{
+background:linear-gradient(135deg,#080b16 0%,#0f1322 60%,#130e20 100%);
+border-bottom:1px solid var(–border);
+padding:0 28px;
 display:flex;align-items:center;justify-content:space-between;
 height:68px;position:sticky;top:0;z-index:200;
-box-shadow:0 2px 40px rgba(0,0,0,.6)}
-.logo-row{display:flex;align-items:center;gap:12px}
-.logo-mark{width:40px;height:40px;border-radius:10px;
-background:linear-gradient(135deg,#d4a843 0%,#7a5220 100%);
+box-shadow:0 2px 40px rgba(0,0,0,.65);
+}
+.logo-row{display:flex;align-items:center;gap:13px}
+.logo-mark{
+width:40px;height:40px;border-radius:10px;
+background:linear-gradient(135deg,#d4a843 0%,#7a5020 100%);
 display:flex;align-items:center;justify-content:center;
 font-size:20px;color:#fff;font-weight:700;
-box-shadow:0 0 0 1px rgba(255,255,255,.12),0 3px 14px rgba(197,163,98,.35)}
+box-shadow:0 0 0 1px rgba(255,255,255,.10),0 3px 14px rgba(200,169,110,.3);
+}
 .logo-text{font-family:‘Cormorant Garamond’,serif;font-size:22px;font-weight:700;color:var(–gold2);letter-spacing:.5px}
 .logo-sub{font-size:10px;letter-spacing:2.5px;color:var(–muted);text-transform:uppercase;margin-top:1px}
 .hdr-nums{display:flex;gap:24px}
@@ -51,147 +89,234 @@ box-shadow:0 0 0 1px rgba(255,255,255,.12),0 3px 14px rgba(197,163,98,.35)}
 .hnum-lbl{font-size:10px;letter-spacing:2px;color:var(–muted);text-transform:uppercase}
 .hnum-val{font-family:‘Cormorant Garamond’,serif;font-size:21px;font-weight:700}
 
-/* ── NAV ── */
-nav{background:var(–bg2);border-bottom:1px solid var(–border);
-padding:0 28px;display:flex;gap:0;overflow-x:auto}
-.nb{background:transparent;border:none;border-bottom:2px solid transparent;
-color:var(–muted);padding:16px 20px;cursor:pointer;
+/* ── NAV ── gold tabs, no blue ── */
+nav{
+background:var(–bg2);
+border-bottom:1px solid var(–border);
+padding:0 28px;
+display:flex;gap:0;overflow-x:auto;
+}
+.nb{
+background:transparent;border:none;
+border-bottom:2px solid transparent;
+color:var(–muted);
+padding:16px 20px;cursor:pointer;
 font-family:‘DM Sans’,sans-serif;font-size:14px;font-weight:500;
-white-space:nowrap;transition:all .18s}
+white-space:nowrap;transition:color .18s,border-color .18s;
+}
 .nb:hover{color:var(–gold2)}
-.nb.active{color:var(–gold);border-bottom-color:var(–gold);font-weight:600}
+.nb.active{
+color:var(–gold);
+border-bottom-color:var(–gold);
+font-weight:600;
+}
 
 /* ── BODY ── */
 .body{padding:26px 28px}
 
 /* ── STAT CARDS ── */
 .sgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:14px;margin-bottom:22px}
-.scard{background:var(–bg2);border:1px solid var(–border);border-radius:var(–r);
-padding:20px 22px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s}
+.scard{
+background:var(–bg2);border:1px solid var(–border);
+border-radius:var(–r);padding:20px 22px;
+position:relative;overflow:hidden;
+transition:transform .2s,box-shadow .2s;
+}
 .scard:hover{transform:translateY(-2px);box-shadow:var(–shadow)}
-.scard::after{content:’’;position:absolute;top:-20px;right:-20px;width:90px;height:90px;
-border-radius:50%;pointer-events:none;
-background:radial-gradient(circle,rgba(197,163,98,.1),transparent 70%)}
+.scard::after{
+content:’’;position:absolute;top:-22px;right:-22px;
+width:90px;height:90px;border-radius:50%;pointer-events:none;
+background:radial-gradient(circle,rgba(200,169,110,.09),transparent 70%);
+}
 .sc-lbl{font-size:10px;letter-spacing:2.5px;color:var(–muted);text-transform:uppercase;margin-bottom:9px}
 .sc-val{font-family:‘Cormorant Garamond’,serif;font-size:32px;font-weight:700;line-height:1}
 .sc-sub{font-size:12px;color:var(–muted);margin-top:8px}
-.sc-bar{height:2px;background:rgba(197,163,98,.12);border-radius:2px;margin-top:14px;overflow:hidden}
+.sc-bar{height:2px;background:rgba(200,169,110,.12);border-radius:2px;margin-top:14px;overflow:hidden}
 .sc-bar-fill{height:100%;background:linear-gradient(90deg,var(–gold),var(–gold2));border-radius:2px;transition:width .7s ease}
-.cp{color:var(–profit)}.cl{color:var(–loss)}.cg{color:var(–gold)}
+
+/* colour helpers */
+.cp{color:var(–profit)}   /* green  */
+.cl{color:var(–loss)}     /* red    */
+.cg{color:var(–gold)}     /* gold   */
+.cm{color:var(–muted)}    /* grey   */
 
 /* ── SECTION ── */
-.sec{background:var(–bg2);border:1px solid var(–border);border-radius:var(–r);
-overflow:hidden;margin-bottom:18px;box-shadow:0 3px 20px rgba(0,0,0,.3)}
-.sec-hd{padding:15px 22px;border-bottom:1px solid var(–border2);
+.sec{
+background:var(–bg2);border:1px solid var(–border);
+border-radius:var(–r);overflow:hidden;
+margin-bottom:18px;box-shadow:0 3px 20px rgba(0,0,0,.28);
+}
+.sec-hd{
+padding:15px 22px;border-bottom:1px solid var(–border2);
 display:flex;align-items:center;justify-content:space-between;
-background:linear-gradient(90deg,var(–bg3),var(–bg2))}
+background:linear-gradient(90deg,var(–bg3),var(–bg2));
+}
 .sec-title{font-family:‘Cormorant Garamond’,serif;font-size:17px;font-weight:600;color:var(–gold2);letter-spacing:.3px}
 .sec-sub{font-size:12px;color:var(–muted)}
-.sec-btn{font-size:12px;color:var(–gold);cursor:pointer;border:1px solid var(–border);
-background:var(–gold-dim);padding:5px 13px;border-radius:6px;transition:all .15s;font-family:‘DM Sans’,sans-serif}
-.sec-btn:hover{background:rgba(197,163,98,.18)}
+.sec-btn{
+font-size:12px;color:var(–gold);cursor:pointer;
+border:1px solid var(–gold-bd);background:var(–gold-dim);
+padding:5px 13px;border-radius:6px;transition:all .15s;font-family:‘DM Sans’,sans-serif;
+}
+.sec-btn:hover{background:rgba(200,169,110,.18)}
 
 /* ── TABLE ── */
 .tw{overflow-x:auto}
 table{width:100%;border-collapse:collapse;font-size:14.5px}
-thead th{background:var(–bg3);color:var(–muted);font-size:10.5px;letter-spacing:1.8px;
-text-transform:uppercase;padding:12px 15px;text-align:left;
-border-bottom:1px solid var(–border);white-space:nowrap;font-weight:500}
+thead th{
+background:var(–bg3);color:var(–muted);
+font-size:10.5px;letter-spacing:1.8px;text-transform:uppercase;
+padding:12px 15px;text-align:left;
+border-bottom:1px solid var(–border);white-space:nowrap;font-weight:500;
+}
 tbody tr{transition:background .12s}
-tbody tr:hover{background:rgba(197,163,98,.04)}
+tbody tr:hover{background:rgba(200,169,110,.04)}
 td{padding:12px 15px;border-bottom:1px solid var(–border2);vertical-align:middle;font-size:14.5px}
 .td-name{font-weight:600;color:var(–gold2);white-space:nowrap}
 .td-date{color:var(–muted);font-size:13px;white-space:nowrap}
-.td-sub{font-size:12px;color:var(–muted);display:block;margin-top:2px}
 
 /* ── BADGES ── */
 .bdg{display:inline-block;padding:4px 11px;border-radius:5px;font-size:13px;font-weight:700}
 .bdg-p{background:var(–profit-bg);color:var(–profit);border:1px solid var(–profit-bd)}
-.bdg-l{background:var(–loss-bg);color:var(–loss);border:1px solid var(–loss-bd)}
+.bdg-l{background:var(–loss-bg);  color:var(–loss);  border:1px solid var(–loss-bd)}
 
-/* ── OPEN TABLE — display mode + edit mode ── */
-/* Cells show as plain text; clicking “編輯” row switches to inputs */
+/* ── EDIT INPUTS ── */
 .edit-inp{
-background:rgba(197,163,98,.07);border:1px solid rgba(197,163,98,.25);
+background:rgba(200,169,110,.07);border:1px solid rgba(200,169,110,.22);
 color:var(–text);padding:5px 10px;border-radius:6px;
 font-family:‘DM Sans’,sans-serif;font-size:14px;
-outline:none;transition:border-color .18s;width:100%;min-width:70px}
-.edit-inp:focus{border-color:var(–gold);box-shadow:0 0 0 2px rgba(197,163,98,.13)}
+outline:none;transition:border-color .18s;width:100%;min-width:70px;
+}
+.edit-inp:focus{border-color:var(–gold);box-shadow:0 0 0 2px rgba(200,169,110,.13)}
 .edit-inp.wide{min-width:160px}
-.row-action-btn{
-padding:4px 11px;border-radius:6px;cursor:pointer;font-size:12px;
-font-family:‘DM Sans’,sans-serif;border:1px solid;transition:all .15s;white-space:nowrap}
-.btn-edit{background:var(–gold-dim);border-color:rgba(197,163,98,.3);color:var(–gold)}
-.btn-edit:hover{background:rgba(197,163,98,.2)}
-.btn-save{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.3);color:#4ade80}
-.btn-save:hover{background:rgba(74,222,128,.16)}
-.btn-del{background:rgba(240,96,144,.07);border-color:rgba(240,96,144,.25);color:var(–loss)}
-.btn-del:hover{background:rgba(240,96,144,.16)}
 
-@keyframes flash{0%,100%{opacity:1}50%{opacity:.5}}
+/* ── ROW BUTTONS ── */
+.rab{padding:4px 11px;border-radius:6px;cursor:pointer;font-size:12px;
+font-family:‘DM Sans’,sans-serif;border:1px solid;transition:all .15s;white-space:nowrap}
+.btn-edit{background:var(–gold-dim);   border-color:var(–gold-bd);color:var(–gold)}
+.btn-edit:hover{background:rgba(200,169,110,.2)}
+.btn-save{background:rgba(34,197,94,.08);border-color:rgba(34,197,94,.3);color:var(–profit)}
+.btn-save:hover{background:rgba(34,197,94,.16)}
+.btn-del{background:rgba(244,63,94,.07);border-color:rgba(244,63,94,.24);color:var(–loss)}
+.btn-del:hover{background:rgba(244,63,94,.16)}
+
+@keyframes flash{0%,100%{opacity:1}50%{opacity:.45}}
 .flash{animation:flash .4s ease}
 
-/* ── CHART ── */
+/* ── DRAG & DROP ── */
+.drag-handle{
+display:inline-flex;align-items:center;justify-content:center;
+width:22px;height:32px;cursor:grab;color:var(–muted);
+font-size:16px;opacity:.5;transition:opacity .15s;
+touch-action:none; /* essential for iOS touch drag */
+user-select:none;-webkit-user-select:none;
+}
+.drag-handle:hover{opacity:1;color:var(–gold)}
+.drag-handle:active{cursor:grabbing}
+tr.dragging{
+opacity:.4;
+background:rgba(200,169,110,.12) !important;
+}
+tr.drag-over{
+border-top:2px solid var(–gold);
+background:rgba(200,169,110,.08) !important;
+}
+
+/* ── CHART CONTROLS ── */
 .chart-ctrl{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin-bottom:18px}
 .cg-wrap{display:flex;flex-direction:column;gap:5px}
 .cg-lbl{font-size:10px;letter-spacing:2px;color:var(–muted);text-transform:uppercase}
 .tog-row{display:flex;gap:6px}
-.tog{background:var(–bg3);border:1px solid var(–border);color:var(–muted);
-padding:9px 17px;border-radius:7px;cursor:pointer;font-family:‘DM Sans’,sans-serif;font-size:14px;transition:all .18s}
+.tog{
+background:var(–bg3);border:1px solid var(–border);color:var(–muted);
+padding:9px 17px;border-radius:7px;cursor:pointer;
+font-family:‘DM Sans’,sans-serif;font-size:14px;transition:all .18s;
+}
 .tog.active{background:var(–gold-dim);border-color:var(–gold);color:var(–gold);font-weight:600}
-.date-inp{background:var(–bg3);border:1px solid var(–border);color:var(–text);
-padding:9px 12px;border-radius:7px;font-family:‘DM Sans’,sans-serif;font-size:14px;
-outline:none;width:150px}
+.tog:hover:not(.active){color:var(–gold2)}
+.date-inp{
+background:var(–bg3);border:1px solid var(–border);color:var(–text);
+padding:9px 12px;border-radius:7px;font-family:‘DM Sans’,sans-serif;
+font-size:14px;outline:none;width:150px;
+}
 .date-inp:focus{border-color:var(–gold)}
-.clr-btn{background:transparent;border:1px solid var(–border);color:var(–muted);
-padding:9px 14px;border-radius:7px;cursor:pointer;font-size:13px;font-family:‘DM Sans’,sans-serif}
-.filter-banner{background:rgba(197,163,98,.06);border:1px solid rgba(197,163,98,.25);
+.clr-btn{
+background:transparent;border:1px solid var(–border);color:var(–muted);
+padding:9px 14px;border-radius:7px;cursor:pointer;
+font-size:13px;font-family:‘DM Sans’,sans-serif;
+}
+.clr-btn:hover{border-color:var(–gold);color:var(–gold)}
+.filter-banner{
+background:rgba(200,169,110,.06);border:1px solid var(–gold-bd);
 border-radius:8px;padding:9px 16px;font-size:13px;color:var(–gold);
-margin-bottom:14px;display:none}
+margin-bottom:14px;display:none;
+}
 .cw{padding:24px;background:var(–bg2)}
 
-/* Chart trade detail sub-table */
-.trade-detail{background:var(–bg3);border-left:3px solid var(–border);
-padding:8px 12px;margin-top:6px;border-radius:0 6px 6px 0;font-size:13px}
+/* trade detail sub-table */
+.trade-detail{
+background:var(–bg3);border-left:3px solid var(–border);
+padding:8px 12px;margin-top:4px;border-radius:0 6px 6px 0;
+}
 .trade-detail table{font-size:13px}
-.trade-detail thead th{font-size:9.5px;padding:6px 10px;background:transparent;border-bottom:1px solid var(–border2)}
-.trade-detail td{padding:6px 10px;border-bottom:1px solid var(–border2)}
+.trade-detail thead th{
+font-size:9.5px;padding:6px 10px;
+background:transparent;border-bottom:1px solid var(–border2);
+}
+.trade-detail td{padding:7px 10px;border-bottom:1px solid var(–border2)}
 
 /* ── MODAL ── */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:500;
-align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-bg{
+display:none;position:fixed;inset:0;background:rgba(0,0,0,.74);
+z-index:500;align-items:center;justify-content:center;
+backdrop-filter:blur(4px);
+}
 .modal-bg.open{display:flex}
-.modal{background:var(–bg2);border:1px solid var(–border);border-radius:14px;
+.modal{
+background:var(–bg2);border:1px solid var(–border);border-radius:14px;
 padding:30px;width:min(560px,95vw);box-shadow:0 16px 60px rgba(0,0,0,.6);
-max-height:90vh;overflow-y:auto}
-.modal-title{font-family:‘Cormorant Garamond’,serif;font-size:21px;color:var(–gold2);
-margin-bottom:24px;font-weight:600}
+max-height:90vh;overflow-y:auto;
+}
+.modal-title{
+font-family:‘Cormorant Garamond’,serif;font-size:21px;
+color:var(–gold2);margin-bottom:24px;font-weight:600;
+}
 .f-grid{display:flex;flex-direction:column;gap:16px}
 .f-row{display:flex;gap:14px;flex-wrap:wrap}
 .f-group{display:flex;flex-direction:column;gap:6px;flex:1;min-width:110px}
 .f-group.full{flex:100%}
 .f-lbl{font-size:10px;letter-spacing:2px;color:var(–muted);text-transform:uppercase}
-.f-inp{background:var(–bg3);border:1px solid var(–border);color:var(–text);
+.f-inp{
+background:var(–bg3);border:1px solid var(–border);color:var(–text);
 padding:10px 14px;border-radius:8px;font-family:‘DM Sans’,sans-serif;
-font-size:15px;outline:none;width:100%;transition:border-color .18s}
-.f-inp:focus{border-color:var(–gold);box-shadow:0 0 0 2px rgba(197,163,98,.12)}
+font-size:15px;outline:none;width:100%;transition:border-color .18s;
+}
+.f-inp:focus{border-color:var(–gold);box-shadow:0 0 0 2px rgba(200,169,110,.12)}
 .f-hint{font-size:11px;color:var(–muted);margin-top:2px}
-.prev-box{background:rgba(197,163,98,.06);border:1px solid rgba(197,163,98,.2);
-border-radius:8px;padding:12px 16px;font-size:14px;color:var(–gold);display:none;line-height:1.8}
+.prev-box{
+background:rgba(200,169,110,.06);border:1px solid var(–gold-bd);
+border-radius:8px;padding:12px 16px;font-size:14px;
+color:var(–gold2);display:none;line-height:1.9;
+}
 .modal-actions{display:flex;gap:10px;margin-top:20px;flex-wrap:wrap}
-.ok-btn{background:linear-gradient(135deg,var(–gold) 0%,#8a6020 100%);color:#0c0f1a;
-border:none;padding:12px 30px;border-radius:8px;font-family:‘DM Sans’,sans-serif;
-font-size:15px;font-weight:700;cursor:pointer}
+.ok-btn{
+background:linear-gradient(135deg,var(–gold) 0%,#7a5020 100%);
+color:#0c0f1a;border:none;padding:12px 30px;border-radius:8px;
+font-family:‘DM Sans’,sans-serif;font-size:15px;font-weight:700;cursor:pointer;
+}
 .ok-btn:hover{opacity:.88}
-.no-btn{background:var(–bg3);border:1px solid var(–border);color:var(–muted);
-padding:12px 22px;border-radius:8px;cursor:pointer;font-size:15px;font-family:‘DM Sans’,sans-serif}
+.no-btn{
+background:var(–bg3);border:1px solid var(–border);color:var(–muted);
+padding:12px 22px;border-radius:8px;cursor:pointer;
+font-size:15px;font-family:‘DM Sans’,sans-serif;
+}
 
 /* misc */
-.gold-line{height:1px;background:linear-gradient(90deg,transparent,rgba(197,163,98,.4),transparent);margin:4px 0 20px}
+.gold-line{height:1px;background:linear-gradient(90deg,transparent,rgba(200,169,110,.38),transparent);margin:4px 0 20px}
 .tip{font-size:12px;color:var(–muted);padding:10px 22px;border-top:1px solid var(–border2)}
 ::-webkit-scrollbar{width:5px;height:5px}
 ::-webkit-scrollbar-track{background:var(–bg)}
-::-webkit-scrollbar-thumb{background:rgba(197,163,98,.25);border-radius:3px}
+::-webkit-scrollbar-thumb{background:rgba(200,169,110,.24);border-radius:3px}
 </style>
 
 </head>
@@ -237,7 +362,7 @@ padding:12px 22px;border-radius:8px;cursor:pointer;font-size:15px;font-family:�
 </div>
 
 <script>
-// ═══════════════════ DATA ════════════════════════════════
+// ═══════════ DATA ═══════════════════════════════════════════
 let openPos = [
   {id:1, product:"鴻海統一68購03",   shares:10000,price:0.36,cost:0.37},
   {id:2, product:"強茂統一5C購01",   shares:6000, price:0.51,cost:0.77},
@@ -256,7 +381,6 @@ let openPos = [
   {id:15,product:"公勝保經",         shares:1000, price:79,  cost:88.9},
 ];
 
-// closedTrades: profit & roi are stored (can be entered or auto-calculated)
 let closedTrades = [
   {id:1, date:"2026/04/08",name:"勤誠兆豐59購01",  buyP:0.53,sellP:0.71,shares:4000, profit:718,  roi:34.19},
   {id:2, date:"2026/04/09",name:"啟碁元大5C購01",  buyP:0.62,sellP:1.08,shares:8000, profit:3672, roi:74.33},
@@ -288,12 +412,11 @@ let closedTrades = [
 
 let nextOpenId=20, nextCloseId=30;
 
-// ═══════════════════ COMPUTED ════════════════════════════
-const holdCost = p => +(p.cost * p.shares).toFixed(0);
+// ═══════════ COMPUTED ═══════════════════════════════════════
+const holdCost = p => +(p.cost  * p.shares).toFixed(0);
 const mv       = p => +(p.price * p.shares).toFixed(0);
 const ep       = p => mv(p) - holdCost(p);
 const eroi     = p => holdCost(p) ? +((ep(p)/holdCost(p))*100).toFixed(2) : 0;
-const be       = p => p.cost.toFixed(3);  // break-even = cost price (already paid that per share)
 
 const totalClosed  = ()=> closedTrades.reduce((s,t)=>s+t.profit,0);
 const totalOpenEst = ()=> openPos.filter(p=>p.product!=='公勝保經').reduce((s,p)=>s+ep(p),0);
@@ -302,12 +425,15 @@ const winRate  = ()=> closedTrades.length?(wins()/closedTrades.length*100).toFix
 const avgRoi   = ()=> closedTrades.length?(closedTrades.reduce((s,t)=>s+t.roi,0)/closedTrades.length).toFixed(1):'0.0';
 const bestTrade= ()=> [...closedTrades].sort((a,b)=>b.profit-a.profit)[0];
 
-const fmt  = (n,d=0)=>(+n).toLocaleString('zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d});
-const pct  = n=>`${n>=0?'+':''}${(+n).toFixed(2)}%`;
-const pc   = n=>n>=0?'cp':'cl';
-const bdg  = (n,txt)=>`<span class="bdg ${n>=0?'bdg-p':'bdg-l'}">${txt}</span>`;
+const fmt  = (n,d=0) => (+n).toLocaleString('zh-TW',{minimumFractionDigits:d,maximumFractionDigits:d});
+const pct  = n => `${n>=0?'+':''}${(+n).toFixed(2)}%`;
+const pc   = n => n>=0?'cp':'cl';
+const bdg  = (n,txt) => `<span class="bdg ${n>=0?'bdg-p':'bdg-l'}">${txt}</span>`;
 
-// ═══════════════════ HEADER ══════════════════════════════
+const calcProfit = (b,s,sh) => +((s-b)*sh).toFixed(0);
+const calcRoi    = (b,s)    => b ? +(((s-b)/b)*100).toFixed(2) : 0;
+
+// ═══════════ HEADER ═════════════════════════════════════════
 function updateHeader(){
   const tc=totalClosed(), to=totalOpenEst();
   document.getElementById('hdr').innerHTML=`
@@ -322,7 +448,7 @@ function updateHeader(){
     </div>`;
 }
 
-// ═══════════════════ ROUTING ═════════════════════════════
+// ═══════════ ROUTING ════════════════════════════════════════
 const pages=['overview','open','closed','chart'];
 function go(name){
   pages.forEach(p=>document.getElementById('pv-'+p).style.display=p===name?'':'none');
@@ -330,60 +456,68 @@ function go(name){
   ({overview:renderOverview,open:renderOpen,closed:renderClosed,chart:renderChart})[name]();
 }
 
-// ═══════════════════ OVERVIEW ════════════════════════════
+// ═══════════ OVERVIEW ═══════════════════════════════════════
 function renderOverview(){
   const tc=totalClosed(),to=totalOpenEst(),total=tc+to;
   const bt=bestTrade();
   const topOpen=[...openPos].filter(p=>p.product!=='公勝保經').sort((a,b)=>ep(b)-ep(a));
   document.getElementById('pv-overview').innerHTML=`
   <div class="sgrid">
-    <div class="scard"><div class="sc-lbl">已實現總損益</div>
+    <div class="scard">
+      <div class="sc-lbl">已實現總損益</div>
       <div class="sc-val cp">+${fmt(tc)}</div>
       <div class="sc-sub">${closedTrades.length} 筆交易</div>
-      <div class="sc-bar"><div class="sc-bar-fill" style="width:100%"></div></div></div>
-    <div class="scard"><div class="sc-lbl">持倉預估損益</div>
+      <div class="sc-bar"><div class="sc-bar-fill" style="width:100%"></div></div>
+    </div>
+    <div class="scard">
+      <div class="sc-lbl">持倉預估損益</div>
       <div class="sc-val ${pc(to)}">${to>=0?'+':''}${fmt(to)}</div>
-      <div class="sc-sub">${openPos.length} 個部位（不含股票）</div></div>
-    <div class="scard"><div class="sc-lbl">合計估算損益</div>
+      <div class="sc-sub">${openPos.length} 個部位（不含股票）</div>
+    </div>
+    <div class="scard">
+      <div class="sc-lbl">合計估算損益</div>
       <div class="sc-val ${pc(total)}">${total>=0?'+':''}${fmt(total)}</div>
-      <div class="sc-sub">已實現 + 持倉估算</div></div>
-    <div class="scard"><div class="sc-lbl">勝率</div>
+      <div class="sc-sub">已實現 + 持倉估算</div>
+    </div>
+    <div class="scard">
+      <div class="sc-lbl">勝率</div>
       <div class="sc-val cp">${winRate()}%</div>
       <div class="sc-sub">${wins()} 勝 · ${closedTrades.length-wins()} 敗</div>
-      <div class="sc-bar"><div class="sc-bar-fill" style="width:${winRate()}%"></div></div></div>
-    <div class="scard"><div class="sc-lbl">平均獲利率</div>
+      <div class="sc-bar"><div class="sc-bar-fill" style="width:${winRate()}%"></div></div>
+    </div>
+    <div class="scard">
+      <div class="sc-lbl">平均獲利率</div>
       <div class="sc-val cp">${avgRoi()}%</div>
-      <div class="sc-sub">已實現交易平均</div></div>
-    <div class="scard"><div class="sc-lbl">最佳單筆</div>
+      <div class="sc-sub">已實現交易平均</div>
+    </div>
+    <div class="scard">
+      <div class="sc-lbl">最佳單筆</div>
       <div class="sc-val cp">${bt?'+'+fmt(bt.profit):'—'}</div>
-      <div class="sc-sub" style="font-size:11px">${bt?bt.name:'—'}</div></div>
+      <div class="sc-sub" style="font-size:11px;word-break:break-all">${bt?bt.name:'—'}</div>
+    </div>
   </div>
   <div class="gold-line"></div>
   <div class="sec">
     <div class="sec-hd">
       <span class="sec-title">持倉排行</span>
-      <span class="sec-sub">依預估損益由高到低 · 隨現價更新自動排序</span>
+      <span class="sec-sub">依預估損益由高到低 · 隨現價自動更新</span>
     </div>
     <div class="tw"><table>
       <thead><tr><th>商品</th><th>持股數</th><th>現價</th><th>成本均價</th><th>預估損益</th><th>預估獲利率</th></tr></thead>
-      <tbody>
-      ${topOpen.map(p=>`<tr>
+      <tbody>${topOpen.map(p=>`<tr>
         <td class="td-name">${p.product}</td>
         <td>${fmt(p.shares)}</td>
-        <td class="${ep(p)>=0?'cp':'cl'}" style="font-weight:700">${p.price}</td>
-        <td>${p.cost}</td>
+        <td class="${pc(ep(p))}" style="font-weight:700">${p.price}</td>
+        <td class="cm">${p.cost}</td>
         <td>${bdg(ep(p),(ep(p)>=0?'+':'')+fmt(ep(p)))}</td>
         <td class="${pc(eroi(p))}" style="font-weight:700">${pct(eroi(p))}</td>
-      </tr>`).join('')}
-      </tbody>
+      </tr>`).join('')}</tbody>
     </table></div>
   </div>`;
 }
 
-// ═══════════════════ OPEN — click-to-edit ════════════════
-// Each row: display mode by default; click 編輯 → inputs appear
-let editingOpen = new Set();
-
+// ═══════════ OPEN — click-to-edit ═══════════════════════════
+let editingOpen=new Set();
 function renderOpen(){
   document.getElementById('pv-open').innerHTML=`
   <div class="sec">
@@ -398,12 +532,11 @@ function renderOpen(){
       </tr></thead>
       <tbody id="open-body"></tbody>
     </table></div>
-    <div class="tip">點擊「編輯」修改欄位，儲存後損益自動連動更新</div>
+    <div class="tip">點擊「編輯」後修改欄位，按「儲存」確認，損益自動重算</div>
   </div>`;
   editingOpen.clear();
   renderOpenRows();
 }
-
 function renderOpenRows(){
   const tbody=document.getElementById('open-body'); if(!tbody) return;
   tbody.innerHTML=openPos.map(p=>{
@@ -412,69 +545,60 @@ function renderOpenRows(){
     if(!editing) return `<tr style="background:${rowBg}">
       <td class="td-name">${p.product}</td>
       <td>${fmt(p.shares)}</td>
-      <td class="${ep(p)>=0?'cp':'cl'}" style="font-weight:700">${p.price}</td>
-      <td>${p.cost}</td>
-      <td>${fmt(mv(p))}</td>
-      <td>${fmt(holdCost(p))}</td>
+      <td class="${pc(ep(p))}" style="font-weight:700">${p.price}</td>
+      <td class="cm">${p.cost}</td>
+      <td class="cm">${fmt(mv(p))}</td>
+      <td class="cm">${fmt(holdCost(p))}</td>
       <td>${bdg(ep(p),(ep(p)>=0?'+':'')+fmt(ep(p)))}</td>
       <td class="${pc(eroi(p))}" style="font-weight:700">${pct(eroi(p))}</td>
-      <td>${be(p)}</td>
+      <td class="cm">${p.cost.toFixed(3)}</td>
       <td style="white-space:nowrap;display:flex;gap:6px;padding:9px 15px">
-        <button class="row-action-btn btn-edit" onclick="startEditOpen(${p.id})">編輯</button>
-        <button class="row-action-btn btn-del"  onclick="delOpen(${p.id})">刪除</button>
+        <button class="rab btn-edit" onclick="startEditOpen(${p.id})">編輯</button>
+        <button class="rab btn-del"  onclick="delOpen(${p.id})">刪除</button>
       </td>
     </tr>`;
-    // editing mode
     return `<tr style="background:${rowBg}" id="or-${p.id}">
       <td><input class="edit-inp wide" id="pn-${p.id}" value="${p.product}"/></td>
       <td><input class="edit-inp" id="ps-${p.id}" type="number" value="${p.shares}" style="min-width:80px"/></td>
       <td><input class="edit-inp" id="pp-${p.id}" type="number" step="0.01" value="${p.price}" style="min-width:75px"/></td>
-      <td><input class="edit-inp" id="pc-${p.id}" type="number" step="0.01" value="${p.cost}" style="min-width:75px"/></td>
-      <td id="mv-${p.id}" style="color:var(--muted);font-size:13px">${fmt(mv(p))}</td>
-      <td id="hc-${p.id}" style="color:var(--muted);font-size:13px">${fmt(holdCost(p))}</td>
+      <td><input class="edit-inp" id="pc-${p.id}" type="number" step="0.01" value="${p.cost}"  style="min-width:75px"/></td>
+      <td id="mv-${p.id}" class="cm" style="font-size:13px">${fmt(mv(p))}</td>
+      <td id="hc-${p.id}" class="cm" style="font-size:13px">${fmt(holdCost(p))}</td>
       <td id="ep-${p.id}">${bdg(ep(p),(ep(p)>=0?'+':'')+fmt(ep(p)))}</td>
       <td id="er-${p.id}" class="${pc(eroi(p))}" style="font-weight:700">${pct(eroi(p))}</td>
-      <td id="be-${p.id}">${be(p)}</td>
+      <td id="be-${p.id}" class="cm">${p.cost.toFixed(3)}</td>
       <td style="white-space:nowrap;display:flex;gap:6px;padding:9px 15px">
-        <button class="row-action-btn btn-save" onclick="saveOpen(${p.id})">儲存</button>
-        <button class="row-action-btn btn-del"  onclick="delOpen(${p.id})">刪除</button>
+        <button class="rab btn-save" onclick="saveOpen(${p.id})">儲存</button>
+        <button class="rab btn-del"  onclick="delOpen(${p.id})">刪除</button>
       </td>
     </tr>`;
   }).join('');
 }
-
 function startEditOpen(id){editingOpen.add(id);renderOpenRows()}
-
 function saveOpen(id){
   const p=openPos.find(o=>o.id===id); if(!p) return;
   p.product=document.getElementById('pn-'+id)?.value.trim()||p.product;
   p.shares =+document.getElementById('ps-'+id)?.value||p.shares;
   p.price  =+document.getElementById('pp-'+id)?.value||p.price;
   p.cost   =+document.getElementById('pc-'+id)?.value||p.cost;
-  editingOpen.delete(id);
-  renderOpenRows();
-  updateHeader();
-  if(document.getElementById('pv-overview').style.display!=='none') renderOverview();
+  editingOpen.delete(id); renderOpenRows(); updateHeader();
+  if(!document.getElementById('pv-overview').style.display) renderOverview();
 }
-
 function delOpen(id){
   if(!confirm('確定刪除此部位？')) return;
-  openPos=openPos.filter(p=>p.id!==id);
-  editingOpen.delete(id);
+  openPos=openPos.filter(p=>p.id!==id); editingOpen.delete(id);
   renderOpenRows(); updateHeader();
 }
 
-// ═══════════════════ CLOSED ══════════════════════════════
+// ═══════════ CLOSED ═════════════════════════════════════════
 let editingClosed=new Set();
-
 function renderClosed(){
-  const tc=totalClosed();
   document.getElementById('pv-closed').innerHTML=`
   <div class="sec">
     <div class="sec-hd">
       <span class="sec-title">已實現損益（${closedTrades.length} 筆）</span>
       <div style="display:flex;gap:10px;align-items:center">
-        <span style="font-size:14px;color:var(--profit);font-weight:700">總計：+${fmt(tc)}</span>
+        <span style="font-size:14px;color:var(--profit);font-weight:700">總計：+${fmt(totalClosed())}</span>
         <button class="sec-btn" onclick="openAddClosed()">＋ 新增</button>
       </div>
     </div>
@@ -485,12 +609,10 @@ function renderClosed(){
       </tr></thead>
       <tbody id="closed-body"></tbody>
     </table></div>
-    <div class="tip">損益 = （賣出均價 − 買進均價）× 股數，獲利率自動計算</div>
+    <div class="tip">損益 = (賣出 − 買進) × 股數，獲利率自動計算</div>
   </div>`;
-  editingClosed.clear();
-  renderClosedRows();
+  editingClosed.clear(); renderClosedRows();
 }
-
 function renderClosedRows(){
   const b=document.getElementById('closed-body'); if(!b) return;
   b.innerHTML=[...closedTrades].reverse().map(t=>{
@@ -499,48 +621,42 @@ function renderClosedRows(){
     if(!editing) return `<tr style="background:${bg}">
       <td class="td-date">${t.date}</td>
       <td class="td-name">${t.name}</td>
-      <td>${t.buyP}</td>
-      <td>${t.sellP}</td>
-      <td>${fmt(t.shares)}</td>
+      <td class="cm">${t.buyP}</td>
+      <td class="cm">${t.sellP}</td>
+      <td class="cm">${fmt(t.shares)}</td>
       <td>${bdg(t.profit,(t.profit>=0?'+':'')+fmt(t.profit))}</td>
       <td class="${pc(t.roi)}" style="font-weight:700">${pct(t.roi)}</td>
       <td style="white-space:nowrap;display:flex;gap:6px;padding:9px 15px">
-        <button class="row-action-btn btn-edit" onclick="startEditClosed(${t.id})">編輯</button>
-        <button class="row-action-btn btn-del"  onclick="delClosed(${t.id})">刪除</button>
+        <button class="rab btn-edit" onclick="startEditClosed(${t.id})">編輯</button>
+        <button class="rab btn-del"  onclick="delClosed(${t.id})">刪除</button>
       </td>
     </tr>`;
     return `<tr style="background:${bg}" id="cr-${t.id}">
       <td><input class="edit-inp" id="cd-${t.id}" value="${t.date}" style="min-width:110px"/></td>
       <td><input class="edit-inp wide" id="cn-${t.id}" value="${t.name}"/></td>
-      <td><input class="edit-inp" id="cbp-${t.id}" type="number" step="0.01" value="${t.buyP}" style="min-width:70px" oninput="previewClosed(${t.id})"/></td>
+      <td><input class="edit-inp" id="cbp-${t.id}" type="number" step="0.01" value="${t.buyP}"  style="min-width:70px" oninput="previewClosed(${t.id})"/></td>
       <td><input class="edit-inp" id="csp-${t.id}" type="number" step="0.01" value="${t.sellP}" style="min-width:70px" oninput="previewClosed(${t.id})"/></td>
       <td><input class="edit-inp" id="csh-${t.id}" type="number" value="${t.shares}" style="min-width:80px" oninput="previewClosed(${t.id})"/></td>
       <td id="cpr-${t.id}">${bdg(t.profit,(t.profit>=0?'+':'')+fmt(t.profit))}</td>
       <td id="cri-${t.id}" class="${pc(t.roi)}" style="font-weight:700">${pct(t.roi)}</td>
       <td style="white-space:nowrap;display:flex;gap:6px;padding:9px 15px">
-        <button class="row-action-btn btn-save" onclick="saveClosed(${t.id})">儲存</button>
-        <button class="row-action-btn btn-del"  onclick="delClosed(${t.id})">刪除</button>
+        <button class="rab btn-save" onclick="saveClosed(${t.id})">儲存</button>
+        <button class="rab btn-del"  onclick="delClosed(${t.id})">刪除</button>
       </td>
     </tr>`;
   }).join('');
 }
-
-function calcClosedProfit(buyP,sellP,shares){return +((sellP-buyP)*shares).toFixed(0)}
-function calcClosedRoi(buyP,sellP){return buyP?+(((sellP-buyP)/buyP)*100).toFixed(2):0}
-
 function previewClosed(id){
   const bp=+document.getElementById('cbp-'+id)?.value||0;
   const sp=+document.getElementById('csp-'+id)?.value||0;
   const sh=+document.getElementById('csh-'+id)?.value||0;
   if(!bp||!sp||!sh) return;
-  const pr=calcClosedProfit(bp,sp,sh), ri=calcClosedRoi(bp,sp);
+  const pr=calcProfit(bp,sp,sh), ri=calcRoi(bp,sp);
   const pEl=document.getElementById('cpr-'+id), rEl=document.getElementById('cri-'+id);
   if(pEl) pEl.innerHTML=bdg(pr,(pr>=0?'+':'')+fmt(pr));
   if(rEl){rEl.textContent=pct(ri);rEl.className=pc(ri);rEl.style.fontWeight='700'}
 }
-
 function startEditClosed(id){editingClosed.add(id);renderClosedRows()}
-
 function saveClosed(id){
   const t=closedTrades.find(x=>x.id===id); if(!t) return;
   t.date  =document.getElementById('cd-'+id)?.value||t.date;
@@ -548,22 +664,19 @@ function saveClosed(id){
   t.buyP  =+document.getElementById('cbp-'+id)?.value||t.buyP;
   t.sellP =+document.getElementById('csp-'+id)?.value||t.sellP;
   t.shares=+document.getElementById('csh-'+id)?.value||t.shares;
-  t.profit=calcClosedProfit(t.buyP,t.sellP,t.shares);
-  t.roi   =calcClosedRoi(t.buyP,t.sellP);
-  editingClosed.delete(id);
-  renderClosedRows(); updateHeader();
-  if(document.getElementById('pv-overview').style.display!=='none') renderOverview();
+  t.profit=calcProfit(t.buyP,t.sellP,t.shares);
+  t.roi   =calcRoi(t.buyP,t.sellP);
+  editingClosed.delete(id); renderClosedRows(); updateHeader();
+  if(!document.getElementById('pv-overview').style.display) renderOverview();
 }
-
 function delClosed(id){
   if(!confirm('確定刪除？')) return;
-  closedTrades=closedTrades.filter(t=>t.id!==id);
-  editingClosed.delete(id);
+  closedTrades=closedTrades.filter(t=>t.id!==id); editingClosed.delete(id);
   renderClosedRows(); updateHeader();
-  if(document.getElementById('pv-overview').style.display!=='none') renderOverview();
+  if(!document.getElementById('pv-overview').style.display) renderOverview();
 }
 
-// ═══════════════════ MODAL — add open / closed ════════════
+// ═══════════ MODALS ═════════════════════════════════════════
 function openAddOpen(){
   document.getElementById('modal-title').textContent='新增持倉部位';
   document.getElementById('modal-body').innerHTML=`
@@ -583,7 +696,6 @@ function openAddOpen(){
   document.getElementById('modal-ok').onclick=submitOpen;
   document.getElementById('modal').classList.add('open');
 }
-
 function mPrevOpen(){
   const sh=+document.getElementById('m-shares')?.value||0;
   const co=+document.getElementById('m-cost')?.value||0;
@@ -597,7 +709,6 @@ function mPrevOpen(){
       &nbsp;&nbsp; 獲利率：<strong style="color:${ep2>=0?'var(--profit)':'var(--loss)'}">${ep2>=0?'+':''}${ri}%</strong>`;
   } else box.style.display='none';
 }
-
 function submitOpen(){
   const product=document.getElementById('m-product')?.value.trim();
   const shares=+document.getElementById('m-shares')?.value;
@@ -607,13 +718,12 @@ function submitOpen(){
   openPos.push({id:++nextOpenId,product,shares,price,cost});
   closeModal(); renderOpen(); updateHeader();
 }
-
 function openAddClosed(){
   document.getElementById('modal-title').textContent='新增已實現損益';
   document.getElementById('modal-body').innerHTML=`
   <div class="f-grid">
     <div class="f-row">
-      <div class="f-group" style="min-width:140px"><label class="f-lbl">賣出日期</label>
+      <div class="f-group" style="min-width:145px"><label class="f-lbl">賣出日期</label>
         <input class="f-inp" id="m-date" type="date"/></div>
       <div class="f-group full"><label class="f-lbl">商品全名</label>
         <input class="f-inp" id="m-product" placeholder="例：聯發科元大61購11"/></div>
@@ -627,33 +737,29 @@ function openAddClosed(){
         <span class="f-hint">實際賣出的平均價格</span></div>
       <div class="f-group"><label class="f-lbl">賣出股數</label>
         <input class="f-inp" id="m-shares" type="number" placeholder="4000" oninput="mPrevClosed()"/>
-        <span class="f-hint">這次賣出的張數×1000</span></div>
+        <span class="f-hint">張數 × 1000</span></div>
     </div>
     <div class="prev-box" id="m-prev"></div>
-    <p style="font-size:12px;color:var(--muted);line-height:1.7">
-      📌 損益 = (賣出均價 − 買進均價) × 賣出股數<br>
-      📌 獲利率 = (賣出均價 − 買進均價) ÷ 買進均價 × 100%<br>
-      📌 以上會自動計算，不需要手動填入
+    <p style="font-size:12px;color:var(--muted);line-height:1.8">
+      📌 損益 = (賣出 − 買進) × 股數 · 獲利率自動計算，不需手填
     </p>
   </div>`;
   document.getElementById('modal-ok').onclick=submitClosed;
   document.getElementById('modal').classList.add('open');
 }
-
 function mPrevClosed(){
   const bp=+document.getElementById('m-buyp')?.value||0;
   const sp=+document.getElementById('m-sellp')?.value||0;
   const sh=+document.getElementById('m-shares')?.value||0;
   const box=document.getElementById('m-prev'); if(!box) return;
   if(bp&&sp&&sh){
-    const pr=calcClosedProfit(bp,sp,sh), ri=calcClosedRoi(bp,sp);
+    const pr=calcProfit(bp,sp,sh), ri=calcRoi(bp,sp);
     box.style.display='block';
     box.innerHTML=`買入成本：<strong>${fmt(bp*sh)}</strong> &nbsp;|&nbsp; 賣出金額：<strong>${fmt(sp*sh)}</strong><br>
-      自動計算損益：<strong style="color:${pr>=0?'var(--profit)':'var(--loss)'}">${pr>=0?'+':''}${fmt(pr)}</strong>
+      損益：<strong style="color:${pr>=0?'var(--profit)':'var(--loss)'}">${pr>=0?'+':''}${fmt(pr)}</strong>
       &nbsp;&nbsp; 獲利率：<strong style="color:${pr>=0?'var(--profit)':'var(--loss)'}">${pct(ri)}</strong>`;
   } else box.style.display='none';
 }
-
 function submitClosed(){
   const date=(document.getElementById('m-date')?.value||'').replace(/-/g,'/');
   const name=document.getElementById('m-product')?.value.trim();
@@ -661,19 +767,16 @@ function submitClosed(){
   const sellP=+document.getElementById('m-sellp')?.value;
   const shares=+document.getElementById('m-shares')?.value;
   if(!date||!name||!buyP||!sellP||!shares){alert('請填寫日期、商品、買進均價、賣出均價、股數');return}
-  const profit=calcClosedProfit(buyP,sellP,shares);
-  const roi=calcClosedRoi(buyP,sellP);
+  const profit=calcProfit(buyP,sellP,shares), roi=calcRoi(buyP,sellP);
   closedTrades.push({id:++nextCloseId,date,name,buyP,sellP,shares,profit,roi});
   closeModal(); renderClosed(); updateHeader();
-  if(document.getElementById('pv-overview').style.display!=='none') renderOverview();
+  if(!document.getElementById('pv-overview').style.display) renderOverview();
 }
-
 function closeModal(){document.getElementById('modal').classList.remove('open')}
 document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
 
-// ═══════════════════ CHART ═══════════════════════════════
+// ═══════════ CHART ══════════════════════════════════════════
 let chartInst=null, chartMode='cumulative', dateFrom='', dateTo='';
-
 function buildChartData(){
   const byDate={};
   closedTrades.forEach(t=>{
@@ -682,38 +785,31 @@ function buildChartData(){
     byDate[t.date].trades.push(t);
   });
   const norm=s=>s.replace(/[-/]/g,'');
-  let cum=0;
-  let rows=Object.keys(byDate).sort().map(d=>{
-    cum+=byDate[d].daily;
-    return{fullDate:d,label:d.slice(5),daily:byDate[d].daily,cumulative:cum,trades:byDate[d].trades};
-  });
+  let rows=Object.keys(byDate).sort().map(d=>({
+    fullDate:d, label:d.slice(5),
+    daily:byDate[d].daily,
+    trades:byDate[d].trades,
+    cumulative:0,
+  }));
   if(dateFrom) rows=rows.filter(r=>norm(r.fullDate)>=norm(dateFrom));
   if(dateTo)   rows=rows.filter(r=>norm(r.fullDate)<=norm(dateTo));
-  let c=0; return rows.map(r=>{c+=r.daily;return{...r,cumulative:c}});
+  let c=0; return rows.map(r=>{c+=r.daily;return{...r,cumulative:c,count:r.trades.length}});
 }
-
 function renderChart(){
   document.getElementById('pv-chart').innerHTML=`
   <div class="chart-ctrl">
-    <div class="cg-wrap">
-      <span class="cg-lbl">圖表類型</span>
+    <div class="cg-wrap"><span class="cg-lbl">圖表類型</span>
       <div class="tog-row">
         <button class="tog ${chartMode==='cumulative'?'active':''}" onclick="setMode('cumulative')">📈 累計走勢</button>
         <button class="tog ${chartMode==='daily'?'active':''}" onclick="setMode('daily')">📊 每日損益</button>
       </div>
     </div>
-    <div class="cg-wrap">
-      <span class="cg-lbl">起始日期</span>
-      <input type="date" class="date-inp" id="df" value="${dateFrom}" onchange="setDF(this.value)"/>
-    </div>
-    <div class="cg-wrap">
-      <span class="cg-lbl">結束日期</span>
-      <input type="date" class="date-inp" id="dt" value="${dateTo}" onchange="setDT(this.value)"/>
-    </div>
-    <div class="cg-wrap" style="justify-content:flex-end;padding-bottom:1px">
-      <span class="cg-lbl">&nbsp;</span>
-      <button class="clr-btn" onclick="clearDates()">✕ 清除</button>
-    </div>
+    <div class="cg-wrap"><span class="cg-lbl">起始日期</span>
+      <input type="date" class="date-inp" id="df" value="${dateFrom}" onchange="setDF(this.value)"/></div>
+    <div class="cg-wrap"><span class="cg-lbl">結束日期</span>
+      <input type="date" class="date-inp" id="dt" value="${dateTo}" onchange="setDT(this.value)"/></div>
+    <div class="cg-wrap" style="padding-bottom:1px"><span class="cg-lbl">&nbsp;</span>
+      <button class="clr-btn" onclick="clearDates()">✕ 清除</button></div>
   </div>
   <div class="filter-banner" id="fb"></div>
   <div class="sec">
@@ -723,14 +819,12 @@ function renderChart(){
     </div>
     <div class="cw"><canvas id="mc" height="260"></canvas></div>
   </div>
-  <!-- Per-date detail with trade breakdown -->
   <div class="sec">
     <div class="sec-hd"><span class="sec-title">各交易日明細（含買賣明細）</span></div>
     <div class="tw" id="chart-detail"></div>
   </div>`;
   drawChart();
 }
-
 function drawChart(){
   const data=buildChartData();
   const fb=document.getElementById('fb');
@@ -752,39 +846,39 @@ function drawChart(){
   const labels=data.map(d=>d.label);
   const daily=data.map(d=>d.daily);
   const cumul=data.map(d=>d.cumulative);
-  const G='rgba(197,163,98,';
+  const G='rgba(200,169,110,';
 
   if(chartMode==='cumulative'){
     chartInst=new Chart(ctx,{type:'line',data:{labels,datasets:[{
       label:'累計損益',data:cumul,
-      borderColor:G+'1)',backgroundColor:G+'0.07)',
+      borderColor:G+'0.9)',backgroundColor:G+'0.07)',
       pointBackgroundColor:G+'1)',pointRadius:5,pointHoverRadius:8,
       borderWidth:2.5,fill:true,tension:.35}]},
       options:{responsive:true,plugins:{legend:{display:false},
         tooltip:{backgroundColor:'#1d2238',borderColor:G+'0.4)',borderWidth:1,
-          titleColor:'#e8cfa0',bodyColor:'#e8e4dc',padding:10,
+          titleColor:'#e2c99a',bodyColor:'#e6e1d8',padding:10,
           callbacks:{label:c=>`累計：${c.raw>=0?'+':''}${c.raw.toLocaleString()} 元`}}},
-        scales:{x:{grid:{color:G+'0.07)'},ticks:{color:'#6e7a96',font:{size:12}}},
-                y:{grid:{color:G+'0.07)'},ticks:{color:'#6e7a96',font:{size:12}}}}}});
+        scales:{x:{grid:{color:G+'0.07)'},ticks:{color:'#6b7691',font:{size:12}}},
+                y:{grid:{color:G+'0.07)'},ticks:{color:'#6b7691',font:{size:12}}}}}});
   } else {
     chartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[{
       label:'每日損益',data:daily,
-      backgroundColor:daily.map(v=>v>=0?'rgba(240,192,96,.45)':'rgba(240,96,144,.45)'),
-      borderColor:daily.map(v=>v>=0?'rgba(240,192,96,.9)':'rgba(240,96,144,.9)'),
+      backgroundColor:daily.map(v=>v>=0?'rgba(34,197,94,.4)':'rgba(244,63,94,.4)'),
+      borderColor:daily.map(v=>v>=0?'rgba(34,197,94,.85)':'rgba(244,63,94,.85)'),
       borderWidth:1.5,borderRadius:5}]},
       options:{responsive:true,plugins:{legend:{display:false},
         tooltip:{backgroundColor:'#1d2238',borderColor:G+'0.4)',borderWidth:1,
-          titleColor:'#e8cfa0',bodyColor:'#e8e4dc',padding:10,
+          titleColor:'#e2c99a',bodyColor:'#e6e1d8',padding:10,
           callbacks:{label:c=>`當日：${c.raw>=0?'+':''}${c.raw.toLocaleString()} 元`}}},
-        scales:{x:{grid:{color:G+'0.07)'},ticks:{color:'#6e7a96',font:{size:12}}},
-                y:{grid:{color:G+'0.07)'},ticks:{color:'#6e7a96',font:{size:12}}}},
+        scales:{x:{grid:{color:G+'0.07)'},ticks:{color:'#6b7691',font:{size:12}}},
+                y:{grid:{color:G+'0.07)'},ticks:{color:'#6b7691',font:{size:12}}}},
         animation:{onComplete:()=>{
           if(!chartInst) return;
-          const meta=chartInst.getDatasetMeta(0), c2=chartInst.ctx;
+          const meta=chartInst.getDatasetMeta(0),c2=chartInst.ctx;
           c2.save();c2.font='bold 11.5px DM Sans';c2.textAlign='center';
           meta.data.forEach((bar,i)=>{
             const v=daily[i];
-            c2.fillStyle=v>=0?'#f0c060':'#f06090';
+            c2.fillStyle=v>=0?'#22c55e':'#f43f5e';
             c2.fillText((v>=0?'+':'')+v.toLocaleString(),bar.x,v>=0?bar.y-6:bar.y+bar.height+15);
           });
           c2.restore();
@@ -792,59 +886,50 @@ function drawChart(){
       }});
   }
 
-  // Per-date detail table with trade breakdown
+  // Detail table with sub-rows
   const det=document.getElementById('chart-detail'); if(!det) return;
   det.innerHTML=`<table>
     <thead><tr>
       <th>日期</th><th>當日損益</th><th>累計損益</th><th>筆數</th>
     </tr></thead>
-    <tbody>
-    ${data.map(r=>`
+    <tbody>${data.map(r=>`
       <tr style="background:${r.daily>=0?'var(--profit-bg)':'var(--loss-bg)'}">
         <td class="td-date" style="font-weight:600">${r.fullDate}</td>
         <td>${bdg(r.daily,(r.daily>=0?'+':'')+fmt(r.daily))}</td>
         <td class="${pc(r.cumulative)}" style="font-weight:700">${r.cumulative>=0?'+':''}${fmt(r.cumulative)}</td>
-        <td style="color:var(--muted)">${r.count}</td>
+        <td class="cm">${r.count}</td>
       </tr>
-      <tr style="background:${r.daily>=0?'rgba(240,192,96,.03)':'rgba(240,96,144,.03)'}">
+      <tr style="background:${r.daily>=0?'rgba(34,197,94,.02)':'rgba(244,63,94,.02)'}">
         <td colspan="4" style="padding:4px 15px 14px 28px">
-          <div class="trade-detail">
-            <table style="width:100%">
-              <thead><tr>
-                <th>商品</th><th>買進均價</th><th>賣出均價</th><th>股數</th><th>損益</th><th>獲利率</th>
-              </tr></thead>
-              <tbody>
-              ${r.trades.map(t=>`<tr>
-                <td class="td-name" style="font-size:13px">${t.name}</td>
-                <td style="font-size:13px;color:var(--muted)">${t.buyP}</td>
-                <td style="font-size:13px;color:var(--muted)">${t.sellP}</td>
-                <td style="font-size:13px;color:var(--muted)">${fmt(t.shares)}</td>
-                <td>${bdg(t.profit,(t.profit>=0?'+':'')+fmt(t.profit))}</td>
-                <td class="${pc(t.roi)}" style="font-weight:700;font-size:13px">${pct(t.roi)}</td>
-              </tr>`).join('')}
-              </tbody>
-            </table>
-          </div>
+          <div class="trade-detail"><table style="width:100%">
+            <thead><tr>
+              <th>商品</th><th>買進均價</th><th>賣出均價</th><th>股數</th><th>損益</th><th>獲利率</th>
+            </tr></thead>
+            <tbody>${r.trades.map(t=>`<tr>
+              <td class="td-name" style="font-size:13px">${t.name}</td>
+              <td class="cm" style="font-size:13px">${t.buyP}</td>
+              <td class="cm" style="font-size:13px">${t.sellP}</td>
+              <td class="cm" style="font-size:13px">${fmt(t.shares)}</td>
+              <td>${bdg(t.profit,(t.profit>=0?'+':'')+fmt(t.profit))}</td>
+              <td class="${pc(t.roi)}" style="font-weight:700;font-size:13px">${pct(t.roi)}</td>
+            </tr>`).join('')}</tbody>
+          </table></div>
         </td>
-      </tr>
-    `).join('')}
+      </tr>`).join('')}
     </tbody>
   </table>`;
 }
-
 function setMode(m){chartMode=m;drawChart()}
 function setDF(v){dateFrom=v;drawChart()}
 function setDT(v){dateTo=v;drawChart()}
 function clearDates(){
   dateFrom='';dateTo='';
   const a=document.getElementById('df'),b=document.getElementById('dt');
-  if(a)a.value='';if(b)b.value='';
-  drawChart();
+  if(a)a.value='';if(b)b.value='';drawChart();
 }
 
-// ═══════════════════ INIT ════════════════════════════════
-updateHeader();
-renderOverview();
+// ═══════════ INIT ════════════════════════════════════════════
+updateHeader(); renderOverview();
 </script>
 
 </body>
